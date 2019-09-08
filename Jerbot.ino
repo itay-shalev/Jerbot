@@ -6,12 +6,91 @@
 #define LEFT 2
 #define RIGHT 3
 
+
+#define X 12
+#define Y 25
+#define PATH_SIZE 50
+
+#define HOME_1 5, 1
+#define ROOM_1_1 8, 1
+#define ROOM_2_1 1, 6
+#define ROOM_3_1 5, 11
+#define ROOM_4_1 5, 11
+#define HOME_2 5, 13
+#define ROOM_1_2 8, 13
+#define ROOM_2_2 1, 18
+#define ROOM_3_2 5, 23
+#define ROOM_4_2 5, 23
+
+
+void mapDrive(int speed, int x1, int y1, int x2, int y2);
+
+
+
+
+// ***** Pathfinder Variables ***** //
+
+char path[PATH_SIZE] = { 0 };
+char _map[Y][X] = {
+  {'1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '0', '0', '0', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '1', '0', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '1', '1', '1'},
+  {'1', '0', '1', '1', '1', '0', '1', '0', '1', '1', '1', '1'},
+  {'1', '0', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1'},
+  {'1', '1', '1', '1', '1', '0', '1', '1', '1', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '0', '0', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '0', '0', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '0', '0', '1'},
+  {'1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'},
+  {'1', '1', '1', '1', '1', '0', '1', '1', '1', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '0', '0', '0', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '1', '0', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '1', '1', '1'},
+  {'1', '0', '1', '1', '1', '0', '1', '0', '1', '1', '1', '1'},
+  {'1', '0', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1'},
+  {'1', '1', '1', '1', '1', '0', '1', '1', '1', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '0', '0', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '0', '0', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '0', '0', '1'},
+  {'1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'},
+  {'1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1'}
+};
+const char originalMap[Y][X] = {
+  {'1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '0', '0', '0', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '1', '0', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '1', '1', '1'},
+  {'1', '0', '1', '1', '1', '0', '1', '0', '1', '1', '1', '1'},
+  {'1', '0', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1'},
+  {'1', '1', '1', '1', '1', '0', '1', '1', '1', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '0', '0', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '0', '0', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '0', '0', '1'},
+  {'1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'},
+  {'1', '1', '1', '1', '1', '0', '1', '1', '1', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '0', '0', '0', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '1', '0', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '1', '1', '1'},
+  {'1', '0', '1', '1', '1', '0', '1', '0', '1', '1', '1', '1'},
+  {'1', '0', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1'},
+  {'1', '1', '1', '1', '1', '0', '1', '1', '1', '1', '1', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '0', '0', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '0', '0', '1'},
+  {'1', '0', '0', '0', '1', '0', '1', '0', '0', '0', '0', '1'},
+  {'1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'},
+  {'1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1'}
+};
+
 // ***** Motor Connections ****** //
 const int M_FL = 4;
 const int M_FR = 2;
 const int M_BL = 8;
 const int M_BR = 6;
-const int M_WIND = 0;
 
 // ***** IR Connections ****** //
 const int IR_LR = A2;
@@ -29,9 +108,6 @@ const int US_LL = 38;
 const int US_LR = 36;
 const int US_BR = 34;
 
-// ***** UV connections ***** //
-const int UV = 0;
-
 // ***** Variables ****** //
 unsigned long timer = 0;
 double yaw = 0;
@@ -48,7 +124,6 @@ void setup()
   initMotor(M_FR);
   initMotor(M_BL);
   initMotor(M_BR);
-  //initMotor(M_WIND);
   pinMode(IR_LR, INPUT);
   pinMode(IR_LL, INPUT);
   pinMode(IR_FR, INPUT);
@@ -66,10 +141,20 @@ void setup()
 
 void loop() 
 {
+  delay(100);
   align(RIGHT);
   delay(200);
-  wallDrive(50, BACKWARD, RIGHT);
-  
+  mapDrive(60, HOME_1, ROOM_2_1);
+  delay(200);
+  align(FORWARD);
+  delay(200);
+  mapDrive(60, ROOM_2_1, ROOM_3_1);
+  delay(200);
+  align(FORWARD);
+  delay(200);
+  mapDrive(60, ROOM_3_1, HOME_1);
+  delay(200);
+  align(RIGHT);
   delay(1000000);
 }
 
@@ -226,53 +311,6 @@ double readUS(int US)
 }
 
 
-
-int searchAndExtinguish()
-{
-    if (avgUV(UV) > 500)
-    {
-        alignOnCandle();
-        digitalWrite(M_WIND, HIGH);
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-    
-}
-
-void alignOnCandle()
-{
-    while (readIR(IR_FL) < 100) // Need to check for exact value.
-    {
-        turn(80, RIGHT);
-    }
-    stopRobot();
-    while (readIR(IR_FR) < 100)
-    {
-        turn(60, LEFT);
-    }
-    stopRobot();
-}
-
-int avgUV(int pin)
-{
-    int readings = 8;
-    unsigned int avg = 0;
-    int i = 0;
-    for (i = 0; i < readings; i++)
-    {
-        avg += analogRead(pin);
-    }
-    return avg/readings;
-}
-
-void initUV(int UV)
-{
-    pinmode(UV, INPUT);
-}
-
 void initUS(int US)
 {
   pinMode(US, INPUT);
@@ -321,11 +359,11 @@ void align(int face)
     Serial.print("\n\n");
     if (err > 0)
     {
-      turn((p * abs(err)) > 100 ? 100 : (p*abs(err)),RIGHT );
+      turn((p * abs(err)) > 100 ? 100 : (p*abs(err)) < 15 ? 15 : (p*abs(err)), RIGHT);
     }
     else
     {
-      turn((p * abs(err)) > 100 ? 100 : (p*abs(err)),LEFT );
+      turn((p * abs(err)) > 100 ? 100 : (p*abs(err)) < 15 ? 15 : (p*abs(err)), LEFT);
     }
     err = (int)readUS(left_us) - (int)readUS(right_us);
     Serial.print(abs(err));
@@ -445,13 +483,71 @@ void alignedDrive(int speed, int dir, int us, char greaterLess, int val)
     stopRobot();
 }
 
-void wallDrive(int speed, int dir, int face)
+void smartDrive(int speed, int dir)
+{
+  int dist = 30;
+  int flag = 1;
+  bool both = false;
+  while(flag)
+  {
+    if(dir == FORWARD || dir == BACKWARD)
+    {
+      if(readUS(US_RR) < dist || readUS(US_RL) < dist)
+      {
+        wallDrive(speed, dir, RIGHT, both);
+        flag = 0;
+      }
+      else if(readUS(US_LR) < dist || readUS(US_LL) < dist)
+      {
+        wallDrive(speed, dir, LEFT, both);
+        flag = 0;
+      }
+      else
+      {
+        while(dir == BACKWARD ? (readUS(US_RL) > dist && readUS(US_LR) > dist) : (readUS(US_RR) > dist && readUS(US_LL) > dist))
+        {
+          drive(speed, dir);
+        }
+        stopRobot();
+        both = true;
+      }
+    }
+    else if(dir == LEFT || dir == RIGHT)
+    {
+      if(readUS(US_FR) < dist || readUS(US_FL) < dist)
+      {
+        wallDrive(speed, dir, FORWARD, both);
+        flag = 0;
+      }
+      else if(readUS(US_BR) < dist || readUS(US_BL) < dist)
+      {
+        wallDrive(speed, dir, BACKWARD, both);
+        flag = 0;
+      }
+      else
+      {
+        while(dir == RIGHT ? readUS(US_BR) > dist && readUS(US_FL) > dist : readUS(US_FR) > dist && readUS(US_BL) > dist)
+        {
+          drive(speed, dir);
+        }
+        stopRobot();
+        both = true;
+      }
+    }
+    delay(100);
+  }
+  drive(speed, dir);
+  delay(-1*2.5*speed + 295);
+  stopRobot();
+}
+
+void wallDrive(int speed, int dir, int face, bool both)
 {
     int val = 8;
     int dist = 30;
     int curr = 0;
     int limit = 80;
-    double p = 1.7;
+    double p = 2;
 
     drive(speed, dir);
     
@@ -461,7 +557,7 @@ void wallDrive(int speed, int dir, int face)
         switch(face)
         {
           case RIGHT:
-            while(readUS(US_RL) < dist)
+            while(!both ? readUS(US_RL) < dist : readUS(US_RL) < dist && readUS(US_LR) < dist)
             {
               curr = val - (int)(((int)readUS(US_RR) + (int)readUS(US_RL)) / 2);
               if(curr < 0)
@@ -475,14 +571,14 @@ void wallDrive(int speed, int dir, int face)
               else
               {
                 motorControl(M_FR, speed, BACKWARD);
-                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p),FORWARD);
-                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p),BACKWARD);
+                motorControl(M_FL, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1),FORWARD);
+                motorControl(M_BR, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1),BACKWARD);
                 motorControl(M_BL, speed, FORWARD);
               }
             }
             break;
           case LEFT:
-            while(readUS(US_LR) < dist)
+            while(!both ? readUS(US_LR) < dist : readUS(US_LR) < dist && readUS(US_RL) < dist)
             {
               curr = val - (int)(((int)readUS(US_LR) + (int)readUS(US_LL)) / 2);
               if(curr < 0)
@@ -507,43 +603,43 @@ void wallDrive(int speed, int dir, int face)
         switch(face)
         {
           case RIGHT:
-            while(readUS(US_RR) < dist)
+            while(!both ? readUS(US_RR) < dist : readUS(US_RR) < dist && readUS(US_LL) < dist)
             {
               curr = val - (int)(((int)readUS(US_RR) + (int)readUS(US_RL)) / 2);
               if(curr < 0)
               {
-                motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p),FORWARD);
-                motorControl(M_FL, speed, BACKWARD);
-                motorControl(M_BR, speed, FORWARD);
-                motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+                motorControl(M_FR, speed,FORWARD);
+                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+                motorControl(M_BL, speed, BACKWARD);
                
               }
               else
               {
-                motorControl(M_FR, speed, FORWARD);
-                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p),BACKWARD);
-                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p),FORWARD);
-                motorControl(M_BL, speed, BACKWARD);
+                motorControl(M_FR, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), FORWARD);
+                motorControl(M_FL, speed,BACKWARD);
+                motorControl(M_BR, speed,FORWARD);
+                motorControl(M_BL, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), BACKWARD);
               }
             }
             break;
           case LEFT:
-            while(readUS(US_LL) < dist)
+            while(!both ? readUS(US_LL) < dist : readUS(US_LL) < dist && readUS(US_RR) < dist)
             {
               curr = val - (int)(((int)readUS(US_LR) + (int)readUS(US_LL)) / 2);
               if(curr < 0)
               {
-                motorControl(M_FR, speed,  FORWARD);
-                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-                motorControl(M_BL, speed, BACKWARD);
+                motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p),  FORWARD);
+                motorControl(M_FL, speed, BACKWARD);
+                motorControl(M_BR, speed, FORWARD);
+                motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
               }
               else
               {
-                motorControl(M_FR, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), FORWARD);
-                motorControl(M_FL, speed, BACKWARD);
-                motorControl(M_BR, speed, FORWARD);
-                motorControl(M_BL, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), BACKWARD);
+                motorControl(M_FR, speed, FORWARD);
+                motorControl(M_FL, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), BACKWARD);
+                motorControl(M_BR, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), FORWARD);
+                motorControl(M_BL, speed, BACKWARD);
               }
             }
             break;
@@ -553,8 +649,46 @@ void wallDrive(int speed, int dir, int face)
         switch(face)
         {
           case FORWARD:
+            while(!both ? readUS(US_FR) < dist : readUS(US_FR) < dist && readUS(US_BL) < dist)
+            {
+              curr = val - (int)(((int)readUS(US_FR) + (int)readUS(US_FL)) / 2);
+              if(curr < 0)
+              {
+                motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+                motorControl(M_FL, speed, FORWARD);
+                motorControl(M_BR, speed, BACKWARD);
+                motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+               
+              }
+              else
+              {
+                motorControl(M_FR, speed, FORWARD);
+                motorControl(M_FL, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), FORWARD);
+                motorControl(M_BR, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1),BACKWARD);
+                motorControl(M_BL, speed, BACKWARD);
+              }
+            }
             break;
           case BACKWARD:
+            while(!both ? readUS(US_BL) < dist : readUS(US_BL) < dist && readUS(US_FR) < dist)
+            {
+              curr = val - (int)(((int)readUS(US_BR) + (int)readUS(US_BL)) / 2);
+              if(curr < 0)
+              {
+                motorControl(M_FR, speed, FORWARD);
+                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+                motorControl(M_BL, speed, BACKWARD);
+               
+              }
+              else
+              {
+                motorControl(M_FR, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), FORWARD);
+                motorControl(M_FL, speed, FORWARD);
+                motorControl(M_BR, speed, BACKWARD);
+                motorControl(M_BL, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), BACKWARD);
+              }
+            }
             break;
         }
         break;
@@ -562,11 +696,349 @@ void wallDrive(int speed, int dir, int face)
         switch(face)
         {
           case FORWARD:
+            while(!both ? readUS(US_FL) < dist : readUS(US_FL) < dist && readUS(US_BR) < dist)
+            {
+              curr = val - (int)(((int)readUS(US_FR) + (int)readUS(US_FL)) / 2);
+              if(curr < 0)
+              {
+                motorControl(M_FR, speed, BACKWARD);
+                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+                motorControl(M_BL, speed, FORWARD);
+               
+              }
+              else
+              {
+                motorControl(M_FR, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), BACKWARD);
+                motorControl(M_FL, speed, BACKWARD);
+                motorControl(M_BR, speed, FORWARD);
+                motorControl(M_BL, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), FORWARD);
+              }
+            }
             break;
           case BACKWARD:
+            while(!both ? readUS(US_BR) < dist : readUS(US_BR) < dist && readUS(US_FL) < dist)
+            {
+              curr = val - (int)(((int)readUS(US_BR) + (int)readUS(US_BL)) / 2);
+              if(curr < 0)
+              {
+                motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+                motorControl(M_FL, speed, BACKWARD);
+                motorControl(M_BR, speed, FORWARD);
+                motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+               
+              }
+              else
+              {
+                motorControl(M_FR, speed, BACKWARD);
+                motorControl(M_FL, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), BACKWARD);
+                motorControl(M_BR, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), FORWARD);
+                motorControl(M_BL, speed, FORWARD);
+              }
+            }
             break;
         }
         break;
     }
     stopRobot();
 }
+
+
+int pathfind(int x1, int y1, int x2, int y2)
+{
+  int count = 0;
+  int flag = 1;
+  int i = 0;
+  int x = x1;
+  int y = y1;
+  int counter = 0;
+  char check[4] = { 'U', 'R', 'D', 'L' };
+
+  if (_map[y2][x2] == '1')
+  {
+    //printf("(x2,y2) is a wall.\n");
+    return 0;
+  }
+  if (_map[y1][x1] == '1')
+  {
+    //printf("(x1,y1) is a wall.\n");
+    return 0;
+  }
+
+  for (i = 0; i < PATH_SIZE; i++)
+  {
+    path[i] = 0;
+  }
+
+  while (x != x2 || y != y2)
+  {
+    if (_map[y][x] == '+')
+    {
+      //printf("Stuck, Could not find a suitable path!\n");
+      counter = 0;
+      x = x1;
+      y = y1;
+      blockPath(x1, y1);
+    }
+
+    _map[y][x] = '+';
+    flag = 1;
+    count = 0;
+
+    if (_map[y][x + 1] == '0' || _map[y][x + 1] == '+')
+    {
+      count++;
+    }
+    if (_map[y][x - 1] == '0' || _map[y][x - 1] == '+')
+    {
+      count++;
+    }
+    if (_map[y + 1][x] == '0' || _map[y + 1][x] == '+')
+    {
+      count++;
+    }
+    if (_map[y - 1][x] == '0' || _map[y - 1][x] == '+')
+    {
+      count++;
+    }
+    if (count > 2)
+    {
+      //printf("*");
+      path[counter++] = '*';
+    }
+
+    if (y <= y2 && x <= x2)
+    {
+      if (y2 - y > x2 - x)
+      {
+        check[0] = 'U';
+        check[1] = 'L';
+        check[2] = 'D';
+        check[3] = 'R';
+      }
+      else
+      {
+        check[0] = 'L';
+        check[1] = 'U';
+        check[2] = 'R';
+        check[3] = 'D';
+      }
+    }
+    else if (y <= y2 && x >= x2)
+    {
+      if (y2 - y > x - x2)
+      {
+        check[0] = 'U';
+        check[1] = 'R';
+        check[2] = 'D';
+        check[3] = 'L';
+      }
+      else
+      {
+        check[0] = 'R';
+        check[1] = 'U';
+        check[2] = 'L';
+        check[3] = 'D';
+      }
+    }
+    else if (y >= y2 && x <= x2)
+    {
+      if (y - y2 > x2 - x)
+      {
+        check[0] = 'D';
+        check[1] = 'L';
+        check[2] = 'U';
+        check[3] = 'R';
+      }
+      else
+      {
+        check[0] = 'L';
+        check[1] = 'D';
+        check[2] = 'R';
+        check[3] = 'U';
+      }
+    }
+    else if (y >= y2 && x >= x2)
+    {
+      if (y - y2 > x - x2)
+      {
+        check[0] = 'D';
+        check[1] = 'R';
+        check[2] = 'U';
+        check[3] = 'L';
+      }
+      else
+      {
+        check[0] = 'R';
+        check[1] = 'D';
+        check[2] = 'L';
+        check[3] = 'U';
+      }
+    }
+    for (i = 0; i < 4 && flag; i++)
+    {
+      switch (check[i])
+      {
+      case 'U':
+        if (_map[y + 1][x] == '0')
+        {
+          //putchar(check[i]);
+          path[counter++] = check[i];
+          y++;
+          flag = 0;
+        }
+        break;
+      case 'R':
+        if (_map[y][x - 1] == '0')
+        {
+          //putchar(check[i]);
+          path[counter++] = check[i];
+          x--;
+          flag = 0;
+        }
+        break;
+      case 'D':
+        if (_map[y - 1][x] == '0')
+        {
+          //putchar(check[i]);
+          path[counter++] = check[i];
+          y--;
+          flag = 0;
+        }
+        break;
+      case 'L':
+        if (_map[y][x + 1] == '0')
+        {
+          //putchar(check[i]);
+          path[counter++] = check[i];
+          x++;
+          flag = 0;
+        }
+        break;
+      default:
+        //printf("Stuck, Could not find a suitable path!");
+        break;
+      }
+    }
+    //getchar();
+    //printMap();
+  }
+  //printf("\n");
+  _map[y][x] = 'O';
+  _map[y1][x1] = 'X';
+  return 1;
+}
+
+void clearPath()
+{
+  int x = 0;
+  int y = 0;
+  int i = 0;
+  for (y = 0; y < Y; y++)
+  {
+    for (x = 0; x < X; x++)
+    {
+      _map[y][x] = originalMap[y][x];
+    }
+  }
+  for (i = 0; i < PATH_SIZE; i++)
+  {
+    path[i] = 0;
+  }
+}
+
+void minimizePath()
+{
+  char newPath[PATH_SIZE] = { 0 };
+  char last = 0;
+  int i = 0;
+  int counter = 0;
+  for (i = 0; path[i]; i++)
+  {
+    if (path[i] != last && path[i] != '*')
+    {
+      newPath[counter++] = path[i];
+      last = path[i];
+    }
+    else if (path[i] == '*')
+    {
+      last = path[i];
+    }
+  }
+
+  for (i = 0; i < PATH_SIZE; i++)
+  {
+    path[i] = 0;
+  }
+
+  for (i = 0; i < counter; i++)
+  {
+    path[i] = newPath[i];
+  }
+}
+
+void blockPath(int x1, int y1)
+{
+  int x = 0;
+  int y = 0;
+  int i = 0;
+
+  for (y = 0; y < Y; y++)
+  {
+    for (x = 0; x < X; x++)
+    {
+      if (x == x1 && y == y1)
+      {
+        _map[y][x] = '0';
+      }
+      else if (_map[y][x] == '+')
+      {
+        _map[y][x] = '1';
+      }
+    }
+  }
+
+  for (i = 0; i < PATH_SIZE; i++)
+  {
+    path[i] = 0;
+  }
+}
+
+void translateDrive(int speed)
+{
+  int i = 0;
+  for (i = 0; path[i] != 0; i++)
+  {
+    switch (path[i])
+    {
+      case 'U':
+        smartDrive(speed, FORWARD);
+        break;
+
+      case 'L':
+        smartDrive(speed, LEFT);
+        break;
+
+      case 'R':
+        smartDrive(speed, RIGHT);
+        break;
+
+      case 'D':
+        smartDrive(speed, BACKWARD);
+        break;
+
+      default:
+        stopRobot();
+        break;
+    }
+  }
+  stopRobot();
+}
+
+// void mapDrive(int speed, int x1, int y1, int x2, int y2)
+// {
+//   pathfind(x1, y1, x2, y2);
+//   minimizePath();
+//   translateDrive(speed);
+//   clearPath();
+// }
