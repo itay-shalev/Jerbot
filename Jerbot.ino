@@ -5,6 +5,10 @@
 #define FORWARD 1
 #define LEFT 2
 #define RIGHT 3
+#define FR 0
+#define FL 1
+#define BR 2
+#define BL 3
 
 
 #define X 12
@@ -21,13 +25,6 @@
 #define ROOM_2_2 1, 18
 #define ROOM_3_2 5, 23
 #define ROOM_4_2 5, 23
-
-
-void mapDrive(int speed, int x1, int y1, int x2, int y2);
-
-
-
-
 // ***** Pathfinder Variables ***** //
 
 char path[PATH_SIZE] = { 0 };
@@ -108,6 +105,12 @@ const int US_LL = 38;
 const int US_LR = 36;
 const int US_BR = 34;
 
+// ***** Function declares ***** //
+void mapDrive(int speed, int x1, int y1, int x2, int y2);
+void motorControl(int motor, int speed, int dir);
+
+
+
 // ***** Variables ****** //
 unsigned long timer = 0;
 double yaw = 0;
@@ -142,19 +145,22 @@ void setup()
 void loop() 
 {
   delay(100);
-  align(RIGHT);
+  cornerAlign(30, BR, 8);
   delay(200);
   mapDrive(60, HOME_1, ROOM_2_1);
+  delay(200);
+  cornerAlign(30, FR, 8);
   delay(200);
   align(FORWARD);
   delay(200);
   mapDrive(60, ROOM_2_1, ROOM_3_1);
   delay(200);
   align(FORWARD);
-  delay(200);
+  delay(500);
   mapDrive(60, ROOM_3_1, HOME_1);
   delay(200);
   align(RIGHT);
+
   delay(1000000);
 }
 
@@ -537,7 +543,7 @@ void smartDrive(int speed, int dir)
     delay(100);
   }
   drive(speed, dir);
-  delay(-1*2.5*speed + 295);
+  delay(-2.5*speed + 230);
   stopRobot();
 }
 
@@ -1033,6 +1039,138 @@ void translateDrive(int speed)
     }
   }
   stopRobot();
+}
+
+void cornerAlign(int speed, int corner, int dist)
+{
+  
+  switch(corner)
+  {
+    case FR:
+      align(FORWARD);
+      delay(100);
+      while((int)((readUS(US_FR) + readUS(US_FL)) / 2) < dist - 1 || (int)((readUS(US_FR) + readUS(US_FL)) / 2) > dist + 1)
+      {
+        if((int)((readUS(US_FR) + readUS(US_FL)) / 2) < dist)
+        {
+          drive(speed, BACKWARD);
+        }
+        else
+        {
+          drive(speed, FORWARD);
+        }
+      }
+      stopRobot();
+      delay(100);
+      while((int)((readUS(US_RR) + readUS(US_RL)) / 2) < dist - 1 || (int)((readUS(US_RR) + readUS(US_RL)) / 2) > dist + 1)
+      {
+        if((int)((readUS(US_RR) + readUS(US_RL)) / 2) < dist)
+        {
+          drive(speed, LEFT);
+        }
+        else
+        {
+          drive(speed, RIGHT);
+        }
+      }
+      stopRobot();
+      delay(100);
+      align(RIGHT);
+      break;
+    case FL:
+      align(FORWARD);
+      delay(100);
+      while((int)((readUS(US_FR) + readUS(US_FL)) / 2) < dist - 1 || (int)((readUS(US_FR) + readUS(US_FL)) / 2) > dist + 1)
+      {
+        if((int)((readUS(US_FR) + readUS(US_FL)) / 2) < dist)
+        {
+          drive(speed, BACKWARD);
+        }
+        else
+        {
+          drive(speed, FORWARD);
+        }
+      }
+      stopRobot();
+      delay(100);
+      while((int)((readUS(US_LR) + readUS(US_LL)) / 2) < dist - 1 || (int)((readUS(US_LR) + readUS(US_LL)) / 2) > dist + 1)
+      {
+        if((int)((readUS(US_LR) + readUS(US_LL)) / 2) < dist)
+        {
+          drive(speed, RIGHT);
+        }
+        else
+        {
+          drive(speed, LEFT);
+        }
+      }
+      stopRobot();
+      delay(100);
+      align(LEFT);
+      break;
+    case BR:
+      align(BACKWARD);
+      delay(100);
+      while((int)((readUS(US_BR) + readUS(US_BL)) / 2) < dist - 1 || (int)((readUS(US_BR) + readUS(US_BL)) / 2) > dist + 1)
+      {
+        if((int)((readUS(US_BR) + readUS(US_BL)) / 2) < dist)
+        {
+          drive(speed, FORWARD);
+        }
+        else
+        {
+          drive(speed, BACKWARD);
+        }
+      }
+      stopRobot();
+      delay(100);
+      while((int)((readUS(US_RR) + readUS(US_RL)) / 2) < dist - 1 || (int)((readUS(US_RR) + readUS(US_RL)) / 2) > dist + 1)
+      {
+        if((int)((readUS(US_RR) + readUS(US_RL)) / 2) < dist)
+        {
+          drive(speed, LEFT);
+        }
+        else
+        {
+          drive(speed, RIGHT);
+        }
+      }
+      stopRobot();
+      delay(100);
+      align(RIGHT);
+      break;
+    case BL:
+      align(BACKWARD);
+      delay(100);
+      while((int)((readUS(US_BR) + readUS(US_BL)) / 2) < dist - 1 || (int)((readUS(US_BR) + readUS(US_BL)) / 2) > dist + 1)
+      {
+        if((int)((readUS(US_BR) + readUS(US_BL)) / 2) < dist)
+        {
+          drive(speed, FORWARD);
+        }
+        else
+        {
+          drive(speed, BACKWARD);
+        }
+      }
+      stopRobot();
+      delay(100);
+      while((int)((readUS(US_LR) + readUS(US_LL)) / 2) < dist - 1 || (int)((readUS(US_LR) + readUS(US_LL)) / 2) > dist + 1)
+      {
+        if((int)((readUS(US_LR) + readUS(US_LL)) / 2) < dist)
+        {
+          drive(speed, RIGHT);
+        }
+        else
+        {
+          drive(speed, LEFT);
+        }
+      }
+      stopRobot();
+      delay(100);
+      align(LEFT);
+      break;
+  }
 }
 
 // void mapDrive(int speed, int x1, int y1, int x2, int y2)
