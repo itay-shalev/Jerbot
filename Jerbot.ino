@@ -88,6 +88,7 @@ const int M_FL = 4;
 const int M_FR = 2;
 const int M_BL = 8;
 const int M_BR = 6;
+const int M_FAN = 32;
 
 // ***** IR Connections ****** //
 const int IR_LR = A2;
@@ -144,12 +145,11 @@ void setup()
 
 void loop() 
 {
+  
   delay(100);
   cornerAlign(30, BR, 8);
   delay(200);
   mapDrive(50, HOME_1, ROOM_2_1);
-  delay(200);
-  cornerAlign(30, FR, 8);
   delay(200);
   align(FORWARD);
   delay(200);
@@ -157,10 +157,14 @@ void loop()
   delay(200);
   align(FORWARD);
   delay(500);
+  wallAlign(RIGHT,83);
+  delay(200);
+  align(FORWARD);
+  delay(200);
   mapDrive(50, ROOM_3_1, HOME_1);
   delay(200);
   align(RIGHT);
-
+ 
   delay(1000000);
 }
 
@@ -514,6 +518,7 @@ void smartDrive(int speed, int dir)
         {
           drive(speed, dir);
         }
+        delay(100);
         stopRobot();
         both = true;
       }
@@ -532,10 +537,11 @@ void smartDrive(int speed, int dir)
       }
       else
       {
-        while(dir == RIGHT ? readUS(US_BR) > dist && readUS(US_FL) > dist : readUS(US_FR) > dist && readUS(US_BL) > dist)
+        while(dir == RIGHT ? (readUS(US_BR) > dist && readUS(US_FL) > dist) : (readUS(US_FR) > dist && readUS(US_BL) > dist))
         {
           drive(speed, dir);
         }
+        delay(100);
         stopRobot();
         both = true;
       }
@@ -543,8 +549,9 @@ void smartDrive(int speed, int dir)
     delay(100);
   }
   drive(speed, dir);
-  delay(-2.5*speed + 235);
+  delay(-2.5*speed + 215);
   stopRobot();
+  digitalWrite(M_FAN, LOW);
 }
 
 void wallDrive(int speed, int dir, int face, bool both)
@@ -1270,7 +1277,7 @@ void alignedDrive(int speed, int dir, int face, bool both)
           case LEFT:
             while(!both ? readUS(US_LR) < dist : readUS(US_LR) < dist && readUS(US_RL) < dist)
             {
-              curr = (int)readUS(US_LL) - (int)readUS(US_LR);
+              curr = (int)readUS(US_LR) - (int)readUS(US_LL);
               if(curr < -1)
               {
                 motorControl(M_FR, speed,  FORWARD);
@@ -1405,6 +1412,86 @@ void alignedDrive(int speed, int dir, int face, bool both)
         break;
     }
     stopRobot();
+}
+
+void wallAlign(int face, int dist)
+{
+  int speed = 25;
+  switch(face)
+  {
+    case FORWARD:
+      while(dist != (int)((readUS(US_FL) + readUS(US_FR)) / 2))
+      {
+        if(dist + 1 > (int)((readUS(US_FL) + readUS(US_FR)) / 2))
+        {
+          drive(speed, BACKWARD);
+        }
+        else if(dist - 1 < (int)((readUS(US_FL) + readUS(US_FR)) / 2))
+        {
+          drive(speed, FORWARD);
+        }
+        else
+        {
+          stopRobot();
+        }
+      }
+      stopRobot();
+      break;
+    case BACKWARD:
+      while(dist != (int)((readUS(US_BL) + readUS(US_BR)) / 2))
+      {
+        if(dist + 1 > (int)((readUS(US_BL) + readUS(US_BR)) / 2))
+        {
+          drive(speed, FORWARD);
+        }
+        else if(dist - 1 < (int)((readUS(US_BL) + readUS(US_BR)) / 2))
+        {
+          drive(speed, BACKWARD);
+        }
+        else
+        {
+          stopRobot();
+        }
+      }
+      stopRobot();
+      break;
+    case RIGHT:
+      while(dist != (int)((readUS(US_RL) + readUS(US_RR)) / 2))
+      {
+        if(dist + 1 > (int)((readUS(US_RL) + readUS(US_RR)) / 2))
+        {
+          drive(speed, LEFT);
+        }
+        else if(dist - 1 < (int)((readUS(US_RL) + readUS(US_RR)) / 2))
+        {
+          drive(speed, RIGHT);
+        }
+        else
+        {
+          stopRobot();
+        }
+      }
+      stopRobot();
+      break;
+    case LEFT:
+      while(dist != (int)((readUS(US_LL) + readUS(US_LR)) / 2))
+      {
+        if(dist + 1 > (int)((readUS(US_LL) + readUS(US_LR)) / 2))
+        {
+          drive(speed, RIGHT);
+        }
+        else if(dist - 1 < (int)((readUS(US_LL) + readUS(US_LR)) / 2))
+        {
+          drive(speed, LEFT);
+        }
+        else
+        {
+          stopRobot();
+        }
+      }
+      stopRobot();
+      break;
+  }
 }
 
 // void mapDrive(int speed, int x1, int y1, int x2, int y2)
