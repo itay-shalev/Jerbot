@@ -10,7 +10,7 @@
 #define BR 2
 #define BL 3
 
-
+#define SPEED_LIMIT 100
 #define X 12
 #define Y 25
 #define PATH_SIZE 50
@@ -117,6 +117,7 @@ unsigned long timer = 0;
 double yaw = 0;
 float timeStep = 0.01;
 int ir = IR_FR;
+int facingDeg = 0;
 
 MPU6050 mpu;
 
@@ -145,7 +146,11 @@ void setup()
 
 void loop() 
 {
-  
+  //gyroDrive(50, FORWARD, 0);
+  //wallDrive(50, FORWARD, RIGHT, false);
+  Serial.println(getYaw());
+
+  /*
   delay(100);
   cornerAlign(30, BR, 8);
   delay(200);
@@ -166,6 +171,7 @@ void loop()
   align(RIGHT);
  
   delay(1000000);
+  */
 }
 
 
@@ -274,13 +280,48 @@ void gyroTurn(int angle, int speed)
   {
     turn(speed, LEFT);
   }
-  while (abs(yaw) <= angle)
+  while (abs(yaw) <= angle + 3 || abs(yaw) <= angle - 3)
   {
     yaw = getYaw();
   }
   stopRobot();
 }
 
+void gyroDrive(int speed, int dir, int angle){
+  double p = 0.34;
+  double t = 0;
+  int limit = 100;
+  while(true) {
+    t = angle - getYaw();
+    switch(dir)
+    {
+      case BACKWARD:
+        motorControl(M_FL, speed, BACKWARD);
+        motorControl(M_FR, speed, FORWARD);
+        motorControl(M_BL, speed, BACKWARD);
+        motorControl(M_BR, speed, FORWARD);
+        break;
+      case FORWARD:
+        motorControl(M_FL, (speed - t * p) > limit ? limit : (speed - t * p), FORWARD);
+        motorControl(M_FR, (speed + t * p) > limit ? limit : (speed + t * p), BACKWARD);
+        motorControl(M_BL, (speed - t * p) > limit ? limit : (speed - t * p), FORWARD);
+        motorControl(M_BR, (speed + t * p) > limit ? limit : (speed + t * p), BACKWARD);
+        break;
+      case LEFT:
+        motorControl(M_FL, speed, BACKWARD);
+        motorControl(M_FR, speed, BACKWARD);
+        motorControl(M_BL, speed, FORWARD);
+        motorControl(M_BR, speed, FORWARD);
+        break;
+      case RIGHT:
+        motorControl(M_FL, speed, FORWARD);
+        motorControl(M_FR, speed, FORWARD);
+        motorControl(M_BL, speed, BACKWARD);
+        motorControl(M_BR, speed, BACKWARD);
+        break;
+    }
+  }
+}
 
 void checkUS()
 {
@@ -387,7 +428,7 @@ void centeredDrive(int speed, int dir, int us, char greaterLess, int val)
 {
     drive(speed, dir);
     
-    int dev = 0; //Deviation in short
+    int dev = 0; // Deviation in short
     int speedDiff = 7;
     int max = 30;
     int us_rr = 0;
@@ -554,6 +595,39 @@ void smartDrive(int speed, int dir)
   digitalWrite(M_FAN, LOW);
 }
 
+// TODO:vcheck function
+void wallDriveMk2(int speed, int dir, int escapeFlag)
+{
+  double pGyro = 0, pUS = 0; // The fix of the driving, p_gyro for gyro, p_us for ultrasonic.
+  int gyroFix = 0;
+  int wallDist = 7; // Th distance that the robot keeps from te selected wall.
+  int usFix = 0;
+  int currUS = US_LR; // The array of the currently used us sensors, pos 0 = left us, pos 1 = right us.
+
+  if (readUS(US_RL) <  30 || readUS(US_RR) <  30)
+  {
+    currUS = US_RL;
+
+  }
+  else
+  {
+    currUS = US_LR;
+  }
+  
+
+  while (escapeFlag)
+  {
+    gyroFix = ((facingDeg - getYaw()) * pGyro) > SPEED_LIMIT ? SPEED_LIMIT : ((facingDeg - getYaw()) * pGyro);
+    usFix = ((readUS(currUS) - wallDist) * pUS) > SPEED_LIMIT ? SPEED_LIMIT : ((readUS(currUS) - wallDist) * pUS);
+ 
+      motorControl(M_FR, speed - usFix, BACKWARD);
+      motorControl(M_FL, speed + gyroFix, FORWARD); // affected by gyro fix
+      motorControl(M_BR, speed - gyroFix, BACKWARD); // affected by gyro fix
+      motorControl(M_BL, speed + usFix, FORWARD);
+    
+  }
+}
+
 void wallDrive(int speed, int dir, int face, bool both)
 {
     int val = 7;
@@ -561,7 +635,7 @@ void wallDrive(int speed, int dir, int face, bool both)
     int curr = 0;
     int limit = 80;
     double p = 3;
-
+  
     drive(speed, dir);
     
     switch(dir)
@@ -584,10 +658,11 @@ void wallDrive(int speed, int dir, int face, bool both)
               else
               {
                 motorControl(M_FR, speed, BACKWARD);
-                motorControl(M_FL, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1),FORWARD);
-                motorControl(M_BR, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1),BACKWARD);
+                motorControl(M_FL, (speed + curr * p * -1) > limit ? limit : (speed + curr *p* -1),FORWARD);
+                motorControl(M_BR, (speed + curr * p * -1) > limit ? limit : (speed + curr *p* -1),BACKWARD);
                 motorControl(M_BL, speed, FORWARD);
               }
+              gyroTurn(0, speed);
             }
             break;
           case LEFT:
@@ -603,12 +678,14 @@ void wallDrive(int speed, int dir, int face, bool both)
               }
               else
               {
-                motorControl(M_FR, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), BACKWARD);
+                motorControl(M_FR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
                 motorControl(M_FL, speed, FORWARD);
                 motorControl(M_BR, speed, BACKWARD);
-                motorControl(M_BL, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), FORWARD);
+                motorControl(M_BL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
               }
+              gyroTurn(0, speed);
             }
+
             break;
         }
         break;
@@ -629,11 +706,12 @@ void wallDrive(int speed, int dir, int face, bool both)
               }
               else
               {
-                motorControl(M_FR, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), FORWARD);
+                motorControl(M_FR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
                 motorControl(M_FL, speed,BACKWARD);
                 motorControl(M_BR, speed,FORWARD);
-                motorControl(M_BL, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), BACKWARD);
+                motorControl(M_BL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
               }
+              gyroTurn(0, speed);
             }
             break;
           case LEFT:
@@ -650,10 +728,11 @@ void wallDrive(int speed, int dir, int face, bool both)
               else
               {
                 motorControl(M_FR, speed, FORWARD);
-                motorControl(M_FL, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), BACKWARD);
-                motorControl(M_BR, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), FORWARD);
+                motorControl(M_FL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
+                motorControl(M_BR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
                 motorControl(M_BL, speed, BACKWARD);
               }
+              gyroTurn(0, speed);
             }
             break;
         }
@@ -676,10 +755,11 @@ void wallDrive(int speed, int dir, int face, bool both)
               else
               {
                 motorControl(M_FR, speed, FORWARD);
-                motorControl(M_FL, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), FORWARD);
-                motorControl(M_BR, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1),BACKWARD);
+                motorControl(M_FL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
+                motorControl(M_BR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1),BACKWARD);
                 motorControl(M_BL, speed, BACKWARD);
               }
+              gyroTurn(0, speed);
             }
             break;
           case BACKWARD:
@@ -696,11 +776,12 @@ void wallDrive(int speed, int dir, int face, bool both)
               }
               else
               {
-                motorControl(M_FR, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), FORWARD);
+                motorControl(M_FR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
                 motorControl(M_FL, speed, FORWARD);
                 motorControl(M_BR, speed, BACKWARD);
-                motorControl(M_BL, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), BACKWARD);
+                motorControl(M_BL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
               }
+              gyroTurn(0, speed);
             }
             break;
         }
@@ -722,11 +803,12 @@ void wallDrive(int speed, int dir, int face, bool both)
               }
               else
               {
-                motorControl(M_FR, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), BACKWARD);
+                motorControl(M_FR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
                 motorControl(M_FL, speed, BACKWARD);
                 motorControl(M_BR, speed, FORWARD);
-                motorControl(M_BL, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), FORWARD);
+                motorControl(M_BL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
               }
+              gyroTurn(0, speed);
             }
             break;
           case BACKWARD:
@@ -744,10 +826,11 @@ void wallDrive(int speed, int dir, int face, bool both)
               else
               {
                 motorControl(M_FR, speed, BACKWARD);
-                motorControl(M_FL, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), BACKWARD);
-                motorControl(M_BR, (speed + curr * p * -1) > limit ? limit : (speed + curr * p * -1), FORWARD);
+                motorControl(M_FL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
+                motorControl(M_BR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
                 motorControl(M_BL, speed, FORWARD);
               }
+              gyroTurn(0, speed);
             }
             break;
         }
