@@ -5,12 +5,26 @@
 #define FORWARD 1
 #define LEFT 2
 #define RIGHT 3
+#define BOTH 4
 #define FR 0
 #define FL 1
 #define BR 2
 #define BL 3
 
-#define SPEED_LIMIT 100
+#define O_M_FL 4
+#define O_M_FR 2
+#define O_M_BL 8
+#define O_M_BR 6
+#define O_US_FL 46
+#define O_US_FR 48
+#define O_US_RL 44
+#define O_US_RR 42
+#define O_US_BL 40
+#define O_US_LL 38
+#define O_US_LR 36
+#define O_US_BR 34
+
+#define SPEED_LIMIT(x) (100 - x)
 #define X 12
 #define Y 25
 #define PATH_SIZE 50
@@ -84,10 +98,10 @@ const char originalMap[Y][X] = {
 };
 
 // ***** Motor Connections ****** //
-const int M_FL = 4;
-const int M_FR = 2;
-const int M_BL = 8;
-const int M_BR = 6;
+int M_FL = 4;
+int M_FR = 2;
+int M_BL = 8;
+int M_BR = 6;
 const int M_FAN = 32;
 
 // ***** IR Connections ****** //
@@ -97,14 +111,14 @@ const int IR_FR = A0;
 const int IR_FL = A1;
 
 // ***** US Connections ****** //
-const int US_FL = 46;
-const int US_FR = 48;
-const int US_RL = 44;
-const int US_RR = 42;
-const int US_BL = 40;
-const int US_LL = 38;
-const int US_LR = 36;
-const int US_BR = 34;
+int US_FL = 46;
+int US_FR = 48;
+int US_RL = 44;
+int US_RR = 42;
+int US_BL = 40;
+int US_LL = 38;
+int US_LR = 36;
+int US_BR = 34;
 
 // ***** Function declares ***** //
 void mapDrive(int speed, int x1, int y1, int x2, int y2);
@@ -116,7 +130,6 @@ void motorControl(int motor, int speed, int dir);
 unsigned long timer = 0;
 double yaw = 0;
 float timeStep = 0.01;
-int ir = IR_FR;
 int facingDeg = 0;
 
 MPU6050 mpu;
@@ -146,10 +159,10 @@ void setup()
 
 void loop() 
 {
-  //gyroDrive(50, FORWARD, 0);
-  //wallDrive(50, FORWARD, RIGHT, false);
-  Serial.println(getYaw());
-
+  delay(100);
+  gyroUSDrive(50, FORWARD, BOTH);
+  delay(1000000);
+  
   /*
   delay(100);
   cornerAlign(30, BR, 8);
@@ -224,7 +237,7 @@ void drive(int speed, int dir)
 
 void stopRobot()
 {
-  for(int i = M_FR; i <= M_BL + 1; i++)
+  for(int i = O_M_FR; i <= O_M_BL + 1; i++)
   {
     digitalWrite(i, LOW);
   }
@@ -376,12 +389,11 @@ int readIR(int ir)
 
 void align(int face)
 {
-  double p = 9;
+  double p = 7;
   int err = 0;
   int left_us = 0; 
   int right_us = 0;
   int turnDir = FORWARD;
-
   switch (face)
   {
       case FORWARD:
@@ -402,19 +414,35 @@ void align(int face)
           break;
   }
   err = (int)readUS(left_us) - (int)readUS(right_us);
-  Serial.print(err);
-  Serial.print("\n\n");
   while (abs(err) != 0)
   {
     Serial.print(p * abs(err)) > 100 ? 100 : (p*abs(err));
     Serial.print("\n\n");
     if (err > 0)
     {
-      turn((p * abs(err)) > 100 ? 100 : (p*abs(err)) < 15 ? 15 : (p*abs(err)), RIGHT);
+      turn((p * abs(err)) > 60 ? 60 : (p*abs(err)) < 15 ? 15 : (p*abs(err)), RIGHT);
     }
     else
     {
-      turn((p * abs(err)) > 100 ? 100 : (p*abs(err)) < 15 ? 15 : (p*abs(err)), LEFT);
+      turn((p * abs(err)) > 60 ? 60 : (p*abs(err)) < 15 ? 15 : (p*abs(err)), LEFT);
+    }
+    err = (int)readUS(left_us) - (int)readUS(right_us);
+    Serial.print(abs(err));
+    Serial.print("\n");
+  }
+  stopRobot();
+  err = (int)readUS(left_us) - (int)readUS(right_us);
+  while (abs(err) != 0)
+  {
+    Serial.print(p * abs(err)) > 100 ? 100 : (p*abs(err));
+    Serial.print("\n\n");
+    if (err > 0)
+    {
+      turn((p * abs(err)) > 60 ? 60 : (p*abs(err)) < 15 ? 15 : (p*abs(err)), RIGHT);
+    }
+    else
+    {
+      turn((p * abs(err)) > 60 ? 60 : (p*abs(err)) < 15 ? 15 : (p*abs(err)), LEFT);
     }
     err = (int)readUS(left_us) - (int)readUS(right_us);
     Serial.print(abs(err));
@@ -595,37 +623,50 @@ void smartDrive(int speed, int dir)
   digitalWrite(M_FAN, LOW);
 }
 
-// TODO:vcheck function
-void wallDriveMk2(int speed, int dir, int escapeFlag)
+void gyroUSDrive(int speed, int dir, int us)
 {
-  double pGyro = 0, pUS = 0; // The fix of the driving, p_gyro for gyro, p_us for ultrasonic.
-  int gyroFix = 0;
-  int wallDist = 7; // Th distance that the robot keeps from te selected wall.
+  double pGyro = 1, pUS = 3; // The fix of the driving, p_gyro for gyro, p_us for ultrasonic.
+  double  gyroFix = 0;
+  int wallDist = 7; // The distance that the robot keeps from te selected wall.
   int usFix = 0;
-  int currUS = US_LR; // The array of the currently used us sensors, pos 0 = left us, pos 1 = right us.
+  int currUS = US_LR; // The currently used us sensor
+  int negetiveUS = 1; // This value controles he negetivity of the us values.
+  int lastUS_RR = 10000;
+  int lastUS_LL = 10000;
 
   if (readUS(US_RL) <  30 || readUS(US_RR) <  30)
   {
     currUS = US_RL;
+    digitalWrite(M_FAN, HIGH);
+    negetiveUS = 1;
 
   }
   else
   {
     currUS = US_LR;
+    digitalWrite(M_FAN, LOW);
+    negetiveUS = -1;
   }
-  
 
-  while (escapeFlag)
+  while (us == RIGHT ? !checkHole(US_RR, lastUS_RR) : (us == LEFT ? !checkHole(US_LL, lastUS_LL) : !checkHole(US_LL, lastUS_LL) && !checkHole(US_RR, lastUS_RR)))
   {
-    gyroFix = ((facingDeg - getYaw()) * pGyro) > SPEED_LIMIT ? SPEED_LIMIT : ((facingDeg - getYaw()) * pGyro);
-    usFix = ((readUS(currUS) - wallDist) * pUS) > SPEED_LIMIT ? SPEED_LIMIT : ((readUS(currUS) - wallDist) * pUS);
+    lastUS_RR = readUS(US_RR);
+    lastUS_LL = readUS(US_LL);
+    gyroFix = ((facingDeg - getYaw()) * pGyro) > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : ((facingDeg - getYaw()) * pGyro);
+    usFix = negetiveUS * (((readUS(currUS) - wallDist) * pUS) > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : ((readUS(currUS) - wallDist) * pUS));
  
       motorControl(M_FR, speed - usFix, BACKWARD);
-      motorControl(M_FL, speed + gyroFix, FORWARD); // affected by gyro fix
-      motorControl(M_BR, speed - gyroFix, BACKWARD); // affected by gyro fix
-      motorControl(M_BL, speed + usFix, FORWARD);
-    
+      motorControl(M_FL, speed - gyroFix, FORWARD); // affected by gyro fix
+      motorControl(M_BR, speed + gyroFix, BACKWARD); // affected by gyro fix
+      motorControl(M_BL, speed - usFix, FORWARD);
   }
+  stopRobot();
+}
+
+bool checkHole(int us, int lastRead)
+{
+  int holeDist = 30;
+  return readUS(us) > lastRead + 5 && readUS(us) > holeDist;
 }
 
 void wallDrive(int speed, int dir, int face, bool both)
@@ -837,6 +878,73 @@ void wallDrive(int speed, int dir, int face, bool both)
         break;
     }
     stopRobot();
+}
+
+void faceCycle(int face)
+{
+  switch(face)
+  {
+    case FORWARD:
+      M_BL = O_M_BL;
+      M_BR = O_M_BR;
+      M_FL = O_M_FL;
+      M_FR = O_M_FR;
+      US_FL = O_US_FL;
+      US_FR = O_US_FR;
+      US_RL = O_US_RL;
+      US_RR = O_US_RR;
+      US_BL = O_US_BL;
+      US_LL = O_US_LL;
+      US_LR = O_US_LR;
+      US_BR = O_US_BR;
+      facingDeg = 0;
+      break;
+    case LEFT:
+      M_BL = O_M_BR;
+      M_BR = O_M_FR;
+      M_FL = O_M_BL;
+      M_FR = O_M_FL;
+      US_FL = O_US_LL;
+      US_FR = O_US_LR;
+      US_RL = O_US_FL;
+      US_RR = O_US_FR;
+      US_BL = O_US_RL;
+      US_BR = O_US_RR;
+      US_LL = O_US_BL;
+      US_LR = O_US_BR;
+      facingDeg = 90;
+      break;
+    case BACKWARD:
+      M_BL = O_M_FR;
+      M_BR = O_M_FL;
+      M_FL = O_M_BR;
+      M_FR = O_M_BL;
+      US_FL = O_US_BL;
+      US_FR = O_US_BR;
+      US_RL = O_US_LL;
+      US_RR = O_US_LR;
+      US_BL = O_US_FL;
+      US_BR = O_US_FR;
+      US_LL = O_US_RL;
+      US_LR = O_US_RR;
+      facingDeg = 180;
+      break;
+    case RIGHT:
+      M_BL = O_M_FL;
+      M_BR = O_M_BL;
+      M_FL = O_M_FR;
+      M_FR = O_M_BR;
+      US_FL = O_US_RL;
+      US_FR = O_US_RR;
+      US_RL = O_US_BL;
+      US_RR = O_US_BR;
+      US_BL = O_US_LL;
+      US_BR = O_US_LR;
+      US_LL = O_US_FL;
+      US_LR = O_US_FR;
+      facingDeg = -90;
+      break;
+  }
 }
 
 
