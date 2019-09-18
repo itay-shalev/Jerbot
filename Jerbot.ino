@@ -131,6 +131,7 @@ unsigned long timer = 0;
 double yaw = 0;
 float timeStep = 0.01;
 int facingDeg = 0;
+int swapDir = 1; // For the gyro, if driving right or backward the gyro fix should be minus (multiplied by -1 or 1).
 
 MPU6050 mpu;
 
@@ -159,32 +160,14 @@ void setup()
 
 void loop() 
 {
-  delay(100);
-  gyroUSDrive(50, FORWARD, BOTH);
-  delay(1000000);
-  
-  /*
-  delay(100);
-  cornerAlign(30, BR, 8);
-  delay(200);
-  mapDrive(50, HOME_1, ROOM_2_1);
-  delay(200);
-  align(FORWARD);
-  delay(200);
-  mapDrive(50, ROOM_2_1, ROOM_3_1);
-  delay(200);
-  align(FORWARD);
   delay(500);
-  wallAlign(RIGHT,83);
-  delay(200);
+  mapDrive(50, HOME_1, ROOM_2_1);
   align(FORWARD);
-  delay(200);
+  mapDrive(50, ROOM_2_1, ROOM_3_1);
+  align(FORWARD);
+  wallAlign(RIGHT, 81);
   mapDrive(50, ROOM_3_1, HOME_1);
-  delay(200);
-  align(RIGHT);
- 
   delay(1000000);
-  */
 }
 
 
@@ -300,6 +283,7 @@ void gyroTurn(int angle, int speed)
   stopRobot();
 }
 
+
 void gyroDrive(int speed, int dir, int angle){
   double p = 0.34;
   double t = 0;
@@ -335,6 +319,7 @@ void gyroDrive(int speed, int dir, int angle){
     }
   }
 }
+
 
 void checkUS()
 {
@@ -623,7 +608,8 @@ void smartDrive(int speed, int dir)
   digitalWrite(M_FAN, LOW);
 }
 
-void gyroUSDrive(int speed, int dir, int us)
+
+void gyroUSDrive(int speed)
 {
   double pGyro = 1, pUS = 3; // The fix of the driving, p_gyro for gyro, p_us for ultrasonic.
   double  gyroFix = 0;
@@ -633,22 +619,33 @@ void gyroUSDrive(int speed, int dir, int us)
   int negetiveUS = 1; // This value controles he negetivity of the us values.
   int lastUS_RR = 10000;
   int lastUS_LL = 10000;
+  bool foundWall = false;
+  
 
-  if (readUS(US_RL) <  30 || readUS(US_RR) <  30)
+  //Find on what wall to follow, drives forward untill finds wall if starts with no walls around him.
+  while(!foundWall)
   {
-    currUS = US_RL;
-    digitalWrite(M_FAN, HIGH);
-    negetiveUS = 1;
-
+    if (readUS(US_RL) <  30 || readUS(US_RR) <  30)
+    {
+      currUS = US_RL;
+      digitalWrite(M_FAN, HIGH);
+      negetiveUS = 1;
+      foundWall = true;
+    }
+    else if (readUS(US_LR) <  30 || readUS(US_LL) <  30)
+    {
+      currUS = US_LR;
+      digitalWrite(M_FAN, LOW);
+      negetiveUS = -1;
+      foundWall = true;
+    }
+    else
+    {
+      drive(speed, FORWARD);
+    }
   }
-  else
-  {
-    currUS = US_LR;
-    digitalWrite(M_FAN, LOW);
-    negetiveUS = -1;
-  }
 
-  while (us == RIGHT ? !checkHole(US_RR, lastUS_RR) : (us == LEFT ? !checkHole(US_LL, lastUS_LL) : !checkHole(US_LL, lastUS_LL) && !checkHole(US_RR, lastUS_RR)))
+  while (!checkHole(US_LL, lastUS_LL) && !checkHole(US_RR, lastUS_RR))
   {
     lastUS_RR = readUS(US_RR);
     lastUS_LL = readUS(US_LL);
@@ -661,12 +658,15 @@ void gyroUSDrive(int speed, int dir, int us)
       motorControl(M_BL, speed - usFix, FORWARD);
   }
   stopRobot();
+  drive(speed - 10, FORWARD);
+  delay(-2.5*speed + 107);
+  stopRobot();
 }
 
 bool checkHole(int us, int lastRead)
 {
   int holeDist = 30;
-  return readUS(us) > lastRead + 5 && readUS(us) > holeDist;
+  return readUS(us) > lastRead && readUS(us) > holeDist && lastRead < holeDist;
 }
 
 void wallDrive(int speed, int dir, int face, bool both)
@@ -897,7 +897,8 @@ void faceCycle(int face)
       US_LL = O_US_LL;
       US_LR = O_US_LR;
       US_BR = O_US_BR;
-      facingDeg = 0;
+      //facingDeg = 0;
+      swapDir = 1;
       break;
     case LEFT:
       M_BL = O_M_BR;
@@ -912,7 +913,8 @@ void faceCycle(int face)
       US_BR = O_US_RR;
       US_LL = O_US_BL;
       US_LR = O_US_BR;
-      facingDeg = 90;
+      //facingDeg = 90;
+      swapDir = 1;
       break;
     case BACKWARD:
       M_BL = O_M_FR;
@@ -927,7 +929,8 @@ void faceCycle(int face)
       US_BR = O_US_FR;
       US_LL = O_US_RL;
       US_LR = O_US_RR;
-      facingDeg = 180;
+      //facingDeg = 180;
+      //swapDir = -1;
       break;
     case RIGHT:
       M_BL = O_M_FL;
@@ -942,7 +945,8 @@ void faceCycle(int face)
       US_BR = O_US_LR;
       US_LL = O_US_FL;
       US_LR = O_US_FR;
-      facingDeg = -90;
+      //facingDeg = -90;
+      //swapDir = -1;
       break;
   }
 }
@@ -1216,27 +1220,29 @@ void translateDrive(int speed)
     switch (path[i])
     {
       case 'U':
-        smartDrive(speed, FORWARD);
+        faceCycle(FORWARD);
         break;
 
       case 'L':
-        smartDrive(speed, LEFT);
+        faceCycle(LEFT);
         break;
 
       case 'R':
-        smartDrive(speed, RIGHT);
+        faceCycle(RIGHT);
         break;
 
       case 'D':
-        smartDrive(speed, BACKWARD);
+        faceCycle(BACKWARD);
         break;
 
       default:
         stopRobot();
         break;
     }
+    gyroUSDrive(speed);
   }
   stopRobot();
+  delay(500);
 }
 
 void cornerAlign(int speed, int corner, int dist)
@@ -1685,10 +1691,10 @@ void wallAlign(int face, int dist)
   }
 }
 
-// void mapDrive(int speed, int x1, int y1, int x2, int y2)
-// {
-//   pathfind(x1, y1, x2, y2);
-//   minimizePath();
-//   translateDrive(speed);
-//   clearPath();
-// }
+void mapDrive(int speed, int x1, int y1, int x2, int y2)
+{
+  pathfind(x1, y1, x2, y2);
+  minimizePath();
+  translateDrive(speed);
+  clearPath();
+}
