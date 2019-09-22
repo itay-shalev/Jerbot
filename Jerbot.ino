@@ -24,22 +24,24 @@
 #define O_US_LR 36
 #define O_US_BR 34
 
-#define SPEED_LIMIT(x) (100 - x)
+#define SPEED_LIMIT(x) (80 - x)
 #define X 12
 #define Y 25
 #define PATH_SIZE 50
 
 #define HOME_1 5, 1
-#define ROOM_1_1 8, 1
+#define ROOM_1_1 originalMap[2][8] == '0' ? 8 : 7, originalMap[2][8] == '0' ? 1 : 6
 #define ROOM_2_1 1, 6
 #define ROOM_3_1 5, 11
-#define ROOM_4_1 5, 11
+#define ROOM_4_1 5, originalMap[8][6] == '1' ? 11 : 8
 #define HOME_2 5, 13
 #define ROOM_1_2 8, 13
 #define ROOM_2_2 1, 18
 #define ROOM_3_2 5, 23
 #define ROOM_4_2 5, 23
 // ***** Pathfinder Variables ***** //
+
+//6, 8
 
 char path[PATH_SIZE] = { 0 };
 char _map[Y][X] = {
@@ -48,7 +50,7 @@ char _map[Y][X] = {
   {'1', '0', '0', '0', '1', '0', '1', '1', '0', '1', '1', '1'},
   {'1', '0', '0', '0', '1', '0', '1', '0', '0', '1', '1', '1'},
   {'1', '0', '0', '0', '1', '0', '1', '0', '0', '1', '1', '1'},
-  {'1', '0', '1', '1', '1', '0', '1', '0', '1', '1', '1', '1'},
+  {'1', '0', '1', '1', '1', '0', '1', '1', '1', '1', '1', '1'},
   {'1', '0', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1'},
   {'1', '1', '1', '1', '1', '0', '1', '1', '1', '1', '1', '1'},
   {'1', '0', '0', '0', '1', '0', '1', '0', '0', '0', '0', '1'},
@@ -69,13 +71,13 @@ char _map[Y][X] = {
   {'1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'},
   {'1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1'}
 };
-const char originalMap[Y][X] = {
+char originalMap[Y][X] = {
   {'1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1'},
   {'1', '0', '0', '0', '1', '0', '0', '0', '0', '1', '1', '1'},
   {'1', '0', '0', '0', '1', '0', '1', '1', '0', '1', '1', '1'},
   {'1', '0', '0', '0', '1', '0', '1', '0', '0', '1', '1', '1'},
   {'1', '0', '0', '0', '1', '0', '1', '0', '0', '1', '1', '1'},
-  {'1', '0', '1', '1', '1', '0', '1', '0', '1', '1', '1', '1'},
+  {'1', '0', '1', '1', '1', '0', '1', '1', '1', '1', '1', '1'},
   {'1', '0', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1'},
   {'1', '1', '1', '1', '1', '0', '1', '1', '1', '1', '1', '1'},
   {'1', '0', '0', '0', '1', '0', '1', '0', '0', '0', '0', '1'},
@@ -124,7 +126,10 @@ int US_BR = 34;
 void mapDrive(int speed, int x1, int y1, int x2, int y2);
 void motorControl(int motor, int speed, int dir);
 
-
+// ***** Map Variables ***** //
+bool isRoom4_1Checked = false;
+bool isRoom1_1Checked = false;
+bool isRoom1_1Updated = false;
 
 // ***** Variables ****** //
 unsigned long timer = 0;
@@ -137,8 +142,6 @@ MPU6050 mpu;
 
 void setup() 
 {
-  mpu.begin();
-  mpu.calibrateGyro();
   initMotor(M_FL);
   initMotor(M_FR);
   initMotor(M_BL);
@@ -156,17 +159,33 @@ void setup()
   initUS(US_RL);
   initUS(US_FR);
   Serial.begin(9600);
+  mpu.begin();
+  mpu.calibrateGyro();
   }
 
 void loop() 
 {
   delay(500);
-  mapDrive(50, HOME_1, ROOM_2_1);
-  align(FORWARD);
-  mapDrive(50, ROOM_2_1, ROOM_3_1);
-  align(FORWARD);
-  wallAlign(RIGHT, 81);
-  mapDrive(50, ROOM_3_1, HOME_1);
+  mapDrive(50, HOME_1, ROOM_1_1);
+  delay(100);
+  align(LEFT);
+  delay(100);
+  checkRoom1();
+  mapDrive(50, ROOM_1_1, ROOM_1_1);
+
+  // delay(500);
+  // faceCycle(LEFT);
+  // gyroUSDrive(50);
+
+  
+
+  // mapDrive(50, HOME_1, ROOM_2_1);
+  // align(FORWARD);
+  // delay(200);
+  // mapDrive(50, ROOM_2_1, ROOM_3_1);
+  // align(FORWARD);
+  // delay(200);
+  // mapDrive(50, ROOM_3_1, HOME_1);
   delay(1000000);
 }
 
@@ -613,7 +632,7 @@ void gyroUSDrive(int speed)
 {
   double pGyro = 1, pUS = 3; // The fix of the driving, p_gyro for gyro, p_us for ultrasonic.
   double  gyroFix = 0;
-  int wallDist = 7; // The distance that the robot keeps from te selected wall.
+  int wallDist = 8; // The distance that the robot keeps from te selected wall.
   int usFix = 0;
   int currUS = US_LR; // The currently used us sensor
   int negetiveUS = 1; // This value controles he negetivity of the us values.
@@ -625,14 +644,14 @@ void gyroUSDrive(int speed)
   //Find on what wall to follow, drives forward untill finds wall if starts with no walls around him.
   while(!foundWall)
   {
-    if (readUS(US_RL) <  30 || readUS(US_RR) <  30)
+    if (readUS(US_RL) <  30 && readUS(US_RR) <  30)
     {
       currUS = US_RL;
       digitalWrite(M_FAN, HIGH);
       negetiveUS = 1;
       foundWall = true;
     }
-    else if (readUS(US_LR) <  30 || readUS(US_LL) <  30)
+    else if (readUS(US_LR) <  30 && readUS(US_LL) <  30)
     {
       currUS = US_LR;
       digitalWrite(M_FAN, LOW);
@@ -658,9 +677,9 @@ void gyroUSDrive(int speed)
       motorControl(M_BL, speed - usFix, FORWARD);
   }
   stopRobot();
-  drive(speed - 10, FORWARD);
-  delay(-2.5*speed + 107);
-  stopRobot();
+  // drive(speed - 10, FORWARD);
+  // delay(-2.5*speed + 107);
+  // stopRobot();
 }
 
 bool checkHole(int us, int lastRead)
@@ -1240,9 +1259,11 @@ void translateDrive(int speed)
         break;
     }
     gyroUSDrive(speed);
+    delay(200);
   }
   stopRobot();
   delay(500);
+  faceCycle(FORWARD);
 }
 
 void cornerAlign(int speed, int corner, int dist)
@@ -1693,8 +1714,61 @@ void wallAlign(int face, int dist)
 
 void mapDrive(int speed, int x1, int y1, int x2, int y2)
 {
-  pathfind(x1, y1, x2, y2);
+  if(checkIfRoom(x1, y1, ROOM_1_1) && !isRoom1_1Updated && isRoom1_1Checked)
+  {
+    isRoom1_1Updated = true;
+    pathfind(8, 1, x2, y2);
+  }
+  else
+  {
+    pathfind(x1, y1, x2, y2);
+  }
   minimizePath();
   translateDrive(speed);
+  clearPath();
+}
+
+bool checkIfRoom(int x1, int y1, int x2, int y2)
+{
+  return x1 == x2 && y1 == y2;
+}
+
+void checkRoom4()
+{
+  isRoom4_1Checked = true;
+  faceCycle(FORWARD);
+  if(readUS(US_LL) > 30 && readUS(US_LR) > 30)
+  {
+    originalMap[8][6] = '1';
+    originalMap[9][6] = '1';
+    originalMap[10][6] = '1';
+    originalMap[11][6] = '0';
+  }
+  else
+  {
+    originalMap[8][6] = '0';
+    originalMap[9][6] = '1';
+    originalMap[10][6] = '1';
+    originalMap[11][6] = '1';
+  }
+  clearPath();
+}
+
+void checkRoom1()
+{
+  isRoom1_1Checked = true;
+  faceCycle(FORWARD);
+  if(readUS(US_LL) > 15 && readUS(US_LR) > 15)
+  {
+    originalMap[8][2] = '0';
+    originalMap[7][5] = '1';
+    digitalWrite(M_FAN, LOW);
+  }
+  else
+  {
+    originalMap[2][8] = '1';
+    originalMap[5][7] = '0';
+    digitalWrite(M_FAN, HIGH);
+  }
   clearPath();
 }
