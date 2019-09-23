@@ -137,6 +137,7 @@ double yaw = 0;
 float timeStep = 0.01;
 int facingDeg = 0;
 int swapDir = 1; // For the gyro, if driving right or backward the gyro fix should be minus (multiplied by -1 or 1).
+int currFace = FORWARD;
 
 MPU6050 mpu;
 
@@ -174,7 +175,7 @@ void loop()
   mapDrive(50, ROOM_1_1, ROOM_1_1);
 
   // delay(500);
-  // faceCycle(LEFT);
+  // faceCycle(RIGHT);
   // gyroUSDrive(50);
 
   
@@ -630,15 +631,19 @@ void smartDrive(int speed, int dir)
 
 void gyroUSDrive(int speed)
 {
-  double pGyro = 1, pUS = 3; // The fix of the driving, p_gyro for gyro, p_us for ultrasonic.
-  double  gyroFix = 0;
+  double pYaw = 4, pUS = 3; // The fix of the driving, p_gyro for gyro, p_us for ultrasonic.
+  double yawFix = 0;
   int wallDist = 8; // The distance that the robot keeps from te selected wall.
   int usFix = 0;
-  int currUS = US_LR; // The currently used us sensor
-  int negetiveUS = 1; // This value controles he negetivity of the us values.
-  int lastUS_RR = 10000;
-  int lastUS_LL = 10000;
+  int currDistUS = US_LR; // The currently used us sensor
+  int currRYawUS = US_LR;
+  int currLYawUS = US_LL;
+  int negativeUS = 1; // This value controles he negetivity of the us values.
+  int lastUS_RL = 10000;
+  int lastUS_LR = 10000;
   bool foundWall = false;
+  int minDist = 20;
+  int negativeFace = 1;
   
 
   //Find on what wall to follow, drives forward untill finds wall if starts with no walls around him.
@@ -646,16 +651,20 @@ void gyroUSDrive(int speed)
   {
     if (readUS(US_RL) <  30 && readUS(US_RR) <  30)
     {
-      currUS = US_RL;
+      currDistUS = US_RL;
+      currLYawUS = US_RL;
+      currRYawUS = US_RR;
       digitalWrite(M_FAN, HIGH);
-      negetiveUS = 1;
+      negativeUS = 1;
       foundWall = true;
     }
     else if (readUS(US_LR) <  30 && readUS(US_LL) <  30)
     {
-      currUS = US_LR;
+      currDistUS = US_LR;
+      currLYawUS = US_LL;
+      currRYawUS = US_LR;
       digitalWrite(M_FAN, LOW);
-      negetiveUS = -1;
+      negativeUS = -1;
       foundWall = true;
     }
     else
@@ -664,22 +673,35 @@ void gyroUSDrive(int speed)
     }
   }
 
-  while (!checkHole(US_LL, lastUS_LL) && !checkHole(US_RR, lastUS_RR))
+  if(currFace == FORWARD || currFace == LEFT)
   {
-    lastUS_RR = readUS(US_RR);
-    lastUS_LL = readUS(US_LL);
-    gyroFix = ((facingDeg - getYaw()) * pGyro) > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : ((facingDeg - getYaw()) * pGyro);
-    usFix = negetiveUS * (((readUS(currUS) - wallDist) * pUS) > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : ((readUS(currUS) - wallDist) * pUS));
+    negativeFace = 1;
+  }
+  else
+  {
+    negativeFace = -1;
+  }
+  
+
+  while (!checkHole(US_LR, lastUS_LR) && !checkHole(US_RL, lastUS_RL) && (readUS(US_FR) > minDist) && (readUS(US_FL) > minDist))
+  {
+    lastUS_RL = readUS(US_RL);
+    lastUS_LR = readUS(US_LR);
+    yawFix = negativeFace * negativeUS * (((readUS(currRYawUS) - readUS(currLYawUS)) * pYaw > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : (readUS(currRYawUS) - readUS(currLYawUS)) * pYaw));
+    usFix = negativeUS * (((readUS(currDistUS) - wallDist) * pUS) > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : ((readUS(currDistUS) - wallDist) * pUS));
  
       motorControl(M_FR, speed - usFix, BACKWARD);
-      motorControl(M_FL, speed - gyroFix, FORWARD); // affected by gyro fix
-      motorControl(M_BR, speed + gyroFix, BACKWARD); // affected by gyro fix
+      motorControl(M_FL, readUS(currRYawUS) > 30 || readUS(currLYawUS) > 30 ? speed : speed - yawFix, FORWARD); // affected by gyro fix
+      motorControl(M_BR, readUS(currRYawUS) > 30 || readUS(currLYawUS) > 30 ? speed : speed + yawFix, BACKWARD); // affected by gyro fix
       motorControl(M_BL, speed - usFix, FORWARD);
   }
   stopRobot();
-  // drive(speed - 10, FORWARD);
-  // delay(-2.5*speed + 107);
-  // stopRobot();
+  if(readUS(US_FR) > minDist && readUS(US_FL) > minDist && false)
+  {
+    drive(speed - 10, FORWARD);
+    delay(-2.5*speed + 50);
+    stopRobot();
+  }
 }
 
 bool checkHole(int us, int lastRead)
@@ -901,6 +923,7 @@ void wallDrive(int speed, int dir, int face, bool both)
 
 void faceCycle(int face)
 {
+  currFace = face;
   switch(face)
   {
     case FORWARD:
