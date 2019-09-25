@@ -23,6 +23,7 @@
 #define O_US_LL 38
 #define O_US_LR 36
 #define O_US_BR 34
+#define UV 35
 
 #define SPEED_LIMIT(x) (80 - x)
 #define X 12
@@ -159,6 +160,7 @@ void setup()
   initUS(US_RR);
   initUS(US_RL);
   initUS(US_FR);
+  pinMode(UV, INPUT);
   Serial.begin(9600);
   mpu.begin();
   mpu.calibrateGyro();
@@ -166,22 +168,23 @@ void setup()
 
 void loop() 
 {
-  delay(500);
-  mapDrive(50, HOME_1, ROOM_1_1);
-  delay(100);
-  align(LEFT);
-  delay(100);
-  checkRoom1();
-  mapDrive(50, ROOM_1_1, ROOM_1_1);
+  // delay(500);
+  // mapDrive(50, HOME_1, ROOM_1_1);
+  // delay(100);
+  // align(LEFT);
+  // delay(100);
+  // checkRoom1();
+  // mapDrive(50, ROOM_1_1, ROOM_1_1);
 
   // delay(500);
   // faceCycle(RIGHT);
   // gyroUSDrive(50);
 
-  
+  scanRoom3();
 
   // mapDrive(50, HOME_1, ROOM_2_1);
   // align(FORWARD);
+  // scanRoom2();
   // delay(200);
   // mapDrive(50, ROOM_2_1, ROOM_3_1);
   // align(FORWARD);
@@ -296,7 +299,7 @@ void gyroTurn(int angle, int speed)
   {
     turn(speed, LEFT);
   }
-  while (abs(yaw) <= angle + 3 || abs(yaw) <= angle - 3)
+  while (abs(yaw) <= abs(angle) + 3 || abs(yaw) <= abs(angle) - 3)
   {
     yaw = getYaw();
   }
@@ -304,7 +307,8 @@ void gyroTurn(int angle, int speed)
 }
 
 
-void gyroDrive(int speed, int dir, int angle){
+void gyroDrive(int speed, int dir, int angle)
+{
   double p = 0.34;
   double t = 0;
   int limit = 100;
@@ -633,7 +637,7 @@ void gyroUSDrive(int speed)
 {
   double pYaw = 4, pUS = 3; // The fix of the driving, p_gyro for gyro, p_us for ultrasonic.
   double yawFix = 0;
-  int wallDist = 8; // The distance that the robot keeps from te selected wall.
+  int wallDist = 9; // The distance that the robot keeps from te selected wall.
   int usFix = 0;
   int currDistUS = US_LR; // The currently used us sensor
   int currRYawUS = US_LR;
@@ -642,7 +646,7 @@ void gyroUSDrive(int speed)
   int lastUS_RL = 10000;
   int lastUS_LR = 10000;
   bool foundWall = false;
-  int minDist = 20;
+  int minDist = 40;
   int negativeFace = 1;
   
 
@@ -1794,4 +1798,64 @@ void checkRoom1()
     digitalWrite(M_FAN, HIGH);
   }
   clearPath();
+}
+
+//uv isnt working
+bool readUV()
+{
+  return !digitalRead(UV);
+}
+
+void scanRoom2()
+{
+  faceCycle(FORWARD);
+  gyroTurn(180, 50);
+  delay(100);
+  while(readUS(US_BL) < 40)
+  {
+    drive(50, FORWARD);
+  }
+  stopRobot();
+  delay(50);
+  gyroTurn(30, 50);
+  delay(3000);
+  gyroTurn(150, 50);
+  delay(100);
+  align(FORWARD);
+  delay(100);
+  while(readUS(US_FL) > 25)
+  {
+    drive(50, FORWARD);
+  }
+  stopRobot();
+}
+
+void scanRoom3()
+{
+  faceCycle(FORWARD);
+  align(FORWARD);
+  delay(50);
+  gyroTurn(90, 50);
+  delay(100);
+  while(readUS(US_FL) > 50)
+  {
+    drive(50, FORWARD);
+  }
+  stopRobot();
+  delay(3000);
+  gyroTurn(60, 50);
+  delay(3000);
+  gyroTurn(-120, 50);
+  delay(100);
+  align(FORWARD);
+  delay(300);
+  align(FORWARD);
+  delay(300);
+  while(readUS(US_RL) < 70)
+  {
+    drive(50, LEFT);
+  }
+  stopRobot();
+  delay(300);
+  align(FORWARD);
 }
