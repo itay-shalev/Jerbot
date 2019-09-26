@@ -177,19 +177,22 @@ void loop()
   // mapDrive(50, ROOM_1_1, ROOM_1_1);
 
   // delay(500);
-  // faceCycle(RIGHT);
+  // faceCycle(FORWARD);
   // gyroUSDrive(50);
 
-  scanRoom3();
+  // Serial.println(readUS(US_BL));
+  // delay(10);
 
-  // mapDrive(50, HOME_1, ROOM_2_1);
-  // align(FORWARD);
-  // scanRoom2();
-  // delay(200);
-  // mapDrive(50, ROOM_2_1, ROOM_3_1);
-  // align(FORWARD);
-  // delay(200);
-  // mapDrive(50, ROOM_3_1, HOME_1);
+  mapDrive(50, HOME_1, ROOM_2_1);
+  align(FORWARD);
+  scanRoom2();
+  delay(200);
+  mapDrive(50, ROOM_2_1, ROOM_3_1);
+  align(FORWARD);
+  delay(200);
+  scanRoom3();
+  delay(200);
+  mapDrive(50, ROOM_3_1, HOME_1);
   delay(1000000);
 }
 
@@ -365,22 +368,23 @@ void checkUS()
 double readUS(int US)
 {
   double ans = 0;
-  for(int i = 0; i < 3; i++)
+  int i = 0;
+  int Echo = US;
+  int trig = US + 1;
+
+  for(i = 0; i < 3; i++)
   {
-    int Echo = US;
-    int trig = US + 1;
-    
     digitalWrite(trig, LOW);
     delayMicroseconds(2);
     
     digitalWrite(trig, HIGH);
     delayMicroseconds(10);
     digitalWrite(trig, LOW);
-    
-    ans += pulseIn(Echo, HIGH) * 0.034 / 2;
-    delay(10);
+
+    ans += (pulseIn(Echo, HIGH) * 0.034) / 2;
+    delayMicroseconds(10);
   }
-  return ans / 3;
+  return ans / 3.0;
 }
 
 
@@ -643,8 +647,8 @@ void gyroUSDrive(int speed)
   int currRYawUS = US_LR;
   int currLYawUS = US_LL;
   int negativeUS = 1; // This value controles he negetivity of the us values.
-  int lastUS_RL = 10000;
-  int lastUS_LR = 10000;
+  bool flagUS_RR = false;
+  bool flagUS_LL = false;
   bool foundWall = false;
   int minDist = 40;
   int negativeFace = 1;
@@ -686,32 +690,31 @@ void gyroUSDrive(int speed)
     negativeFace = -1;
   }
   
-
-  while (!checkHole(US_LR, lastUS_LR) && !checkHole(US_RL, lastUS_RL) && (readUS(US_FR) > minDist) && (readUS(US_FL) > minDist))
+  while (!checkHole(US_LL, flagUS_LL) && !checkHole(US_RR, flagUS_RR) && (readUS(US_FR) > minDist) && (readUS(US_FL) > minDist))
   {
-    lastUS_RL = readUS(US_RL);
-    lastUS_LR = readUS(US_LR);
+    if(readUS(US_RR) < 30 && !flagUS_RR)
+    {
+      flagUS_RR = true;
+    }
+    if(readUS(US_LL) < 30 && !flagUS_LL)
+    {
+      flagUS_LL = true;
+    }
     yawFix = negativeFace * negativeUS * (((readUS(currRYawUS) - readUS(currLYawUS)) * pYaw > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : (readUS(currRYawUS) - readUS(currLYawUS)) * pYaw));
     usFix = negativeUS * (((readUS(currDistUS) - wallDist) * pUS) > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : ((readUS(currDistUS) - wallDist) * pUS));
  
-      motorControl(M_FR, speed - usFix, BACKWARD);
-      motorControl(M_FL, readUS(currRYawUS) > 30 || readUS(currLYawUS) > 30 ? speed : speed - yawFix, FORWARD); // affected by gyro fix
-      motorControl(M_BR, readUS(currRYawUS) > 30 || readUS(currLYawUS) > 30 ? speed : speed + yawFix, BACKWARD); // affected by gyro fix
-      motorControl(M_BL, speed - usFix, FORWARD);
+    motorControl(M_FR, speed - usFix, BACKWARD);
+    motorControl(M_FL, readUS(currRYawUS) > 30 || readUS(currLYawUS) > 30 ? speed : speed - yawFix, FORWARD); // affected by gyro fix
+    motorControl(M_BR, readUS(currRYawUS) > 30 || readUS(currLYawUS) > 30 ? speed : speed + yawFix, BACKWARD); // affected by gyro fix
+    motorControl(M_BL, speed - usFix, FORWARD);
   }
   stopRobot();
-  if(readUS(US_FR) > minDist && readUS(US_FL) > minDist && false)
-  {
-    drive(speed - 10, FORWARD);
-    delay(-2.5*speed + 50);
-    stopRobot();
-  }
 }
 
-bool checkHole(int us, int lastRead)
+bool checkHole(int us, bool flag)
 {
   int holeDist = 30;
-  return readUS(us) > lastRead && readUS(us) > holeDist && lastRead < holeDist;
+  return readUS(us) >= holeDist && flag;
 }
 
 void wallDrive(int speed, int dir, int face, bool both)
@@ -1828,6 +1831,8 @@ void scanRoom2()
     drive(50, FORWARD);
   }
   stopRobot();
+  delay(100);
+  align(FORWARD);
 }
 
 void scanRoom3()
