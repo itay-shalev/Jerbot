@@ -177,20 +177,17 @@ void loop()
   // mapDrive(50, ROOM_1_1, ROOM_1_1);
 
   // delay(500);
-  // faceCycle(FORWARD);
+  // faceCycle(RIGHT);
   // gyroUSDrive(50);
 
-  // Serial.println(readUS(US_BL));
-  // delay(10);
+  //Serial.println(readUS(US_BL));
+  //delay(10);
 
   mapDrive(50, HOME_1, ROOM_2_1);
   align(FORWARD);
-  scanRoom2();
   delay(200);
   mapDrive(50, ROOM_2_1, ROOM_3_1);
   align(FORWARD);
-  delay(200);
-  scanRoom3();
   delay(200);
   mapDrive(50, ROOM_3_1, HOME_1);
   delay(1000000);
@@ -384,7 +381,12 @@ double readUS(int US)
     ans += (pulseIn(Echo, HIGH) * 0.034) / 2;
     delayMicroseconds(10);
   }
-  return ans / 3.0;
+  ans = ans / 3.0;
+  if (ans > 200)
+  {
+    stopRobot();
+  }
+  return ans;
 }
 
 
@@ -465,176 +467,176 @@ void align(int face)
 }
 
 
-void centeredDrive(int speed, int dir, int us, char greaterLess, int val)
-{
-    drive(speed, dir);
+// void centeredDrive(int speed, int dir, int us, char greaterLess, int val)
+// {
+//     drive(speed, dir);
     
-    int dev = 0; // Deviation in short
-    int speedDiff = 7;
-    int max = 30;
-    int us_rr = 0;
-    int us_rl = 0;
-    int us_lr = 0;
-    int us_ll = 0;
-    int m_fr = 0;
-    int m_br = 0;
-    int m_bl = 0;
-    int m_fl = 0;
+//     int dev = 0; // Deviation in short
+//     int speedDiff = 7;
+//     int max = 30;
+//     int us_rr = 0;
+//     int us_rl = 0;
+//     int us_lr = 0;
+//     int us_ll = 0;
+//     int m_fr = 0;
+//     int m_br = 0;
+//     int m_bl = 0;
+//     int m_fl = 0;
     
-    switch(dir)
-    {
-        case FORWARD:
-            us_rr = US_RR;
-            us_rl = US_RL;
-            us_lr = US_LR;
-            us_ll = US_LL;
-            m_fr = M_FR;
-            m_br = M_BR;
-            m_bl = M_BL;
-            m_fl = M_FL;
-            break;
-        case BACKWARD:
-            us_rr = US_LR;
-            us_rl = US_LL;
-            us_lr = US_RR;
-            us_ll = US_RL;
-            m_fr = M_BL;
-            m_br = M_FL;
-            m_bl = M_FR;
-            m_fl = M_BR;
-            break;
-        case LEFT:
-            us_rr = US_FR;
-            us_rl = US_FL;
-            us_lr = US_BR;
-            us_ll = US_BL;
-            m_fr = M_FL;
-            m_br = M_FR;
-            m_bl = M_BR;
-            m_fl = M_BL;
-            break;
-        case RIGHT:
-            us_rr = US_BR;
-            us_rl = US_BL;
-            us_lr = US_FR;
-            us_ll = US_FL;
-            m_fr = M_BR;
-            m_br = M_BL;
-            m_bl = M_FL;
-            m_fl = M_FR;
-            break;
-    }
+//     switch(dir)
+//     {
+//         case FORWARD:
+//             us_rr = US_RR;
+//             us_rl = US_RL;
+//             us_lr = US_LR;
+//             us_ll = US_LL;
+//             m_fr = M_FR;
+//             m_br = M_BR;
+//             m_bl = M_BL;
+//             m_fl = M_FL;
+//             break;
+//         case BACKWARD:
+//             us_rr = US_LR;
+//             us_rl = US_LL;
+//             us_lr = US_RR;
+//             us_ll = US_RL;
+//             m_fr = M_BL;
+//             m_br = M_FL;
+//             m_bl = M_FR;
+//             m_fl = M_BR;
+//             break;
+//         case LEFT:
+//             us_rr = US_FR;
+//             us_rl = US_FL;
+//             us_lr = US_BR;
+//             us_ll = US_BL;
+//             m_fr = M_FL;
+//             m_br = M_FR;
+//             m_bl = M_BR;
+//             m_fl = M_BL;
+//             break;
+//         case RIGHT:
+//             us_rr = US_BR;
+//             us_rl = US_BL;
+//             us_lr = US_FR;
+//             us_ll = US_FL;
+//             m_fr = M_BR;
+//             m_br = M_BL;
+//             m_bl = M_FL;
+//             m_fl = M_FR;
+//             break;
+//     }
     
-    while (greaterLess == '<' ? readUS(us) >= val : greaterLess == '>' ? readUS(us) <= val : false)
-    {
-        if (readUS(us_rr) < max && readUS(us_rl) < max && readUS(us_rr) - dev < readUS(us_rl))
-        {
-            motorControl(m_fl, speed + speedDiff, FORWARD);
-            motorControl(m_bl, speed + speedDiff, FORWARD);
-            motorControl(m_br, speed, BACKWARD);
-            motorControl(m_fr, speed,  BACKWARD);
-        }
-        else if (readUS(us_rr) < max && readUS(us_rl) < max && readUS(us_rr) > readUS(us_rl) - dev)
-        {
-            motorControl(m_br, speed + speedDiff, BACKWARD);
-            motorControl(m_fr, speed + speedDiff,  BACKWARD);
-            motorControl(m_fl, speed,  FORWARD);
-            motorControl(m_bl, speed, FORWARD);
-        }
-        else
-        {
-            motorControl(m_br, speed, BACKWARD);
-            motorControl(m_fr, speed, BACKWARD);
-            motorControl(m_fl, speed, FORWARD);
-            motorControl(m_bl, speed, FORWARD);
-        }
+//     while (greaterLess == '<' ? readUS(us) >= val : greaterLess == '>' ? readUS(us) <= val : false)
+//     {
+//         if (readUS(us_rr) < max && readUS(us_rl) < max && readUS(us_rr) - dev < readUS(us_rl))
+//         {
+//             motorControl(m_fl, speed + speedDiff, FORWARD);
+//             motorControl(m_bl, speed + speedDiff, FORWARD);
+//             motorControl(m_br, speed, BACKWARD);
+//             motorControl(m_fr, speed,  BACKWARD);
+//         }
+//         else if (readUS(us_rr) < max && readUS(us_rl) < max && readUS(us_rr) > readUS(us_rl) - dev)
+//         {
+//             motorControl(m_br, speed + speedDiff, BACKWARD);
+//             motorControl(m_fr, speed + speedDiff,  BACKWARD);
+//             motorControl(m_fl, speed,  FORWARD);
+//             motorControl(m_bl, speed, FORWARD);
+//         }
+//         else
+//         {
+//             motorControl(m_br, speed, BACKWARD);
+//             motorControl(m_fr, speed, BACKWARD);
+//             motorControl(m_fl, speed, FORWARD);
+//             motorControl(m_bl, speed, FORWARD);
+//         }
         
-        if (readUS(us_ll) < max && readUS(us_lr) < max && readUS(us_ll) - dev < readUS(us_lr))
-        {
-            motorControl(m_fr, speed + speedDiff, BACKWARD);
-            motorControl(m_br, speed + speedDiff, BACKWARD);
-            motorControl(m_bl, speed, FORWARD);
-            motorControl(m_fl, speed, FORWARD);
-        }
-        else if (readUS(us_ll) < max && readUS(us_lr) < max && readUS(us_ll) > readUS(us_lr) - dev)
-        {
-            motorControl(m_bl, speed + speedDiff, FORWARD);
-            motorControl(m_fl, speed + speedDiff, FORWARD);
-            motorControl(m_fr, speed, BACKWARD);
-            motorControl(m_br, speed, BACKWARD);
-        }
-        else
-        {
-            motorControl(m_br, speed, BACKWARD);
-            motorControl(m_fr, speed, BACKWARD);
-            motorControl(m_fl, speed, FORWARD);
-            motorControl(m_bl, speed, FORWARD);
-        }
-    }
+//         if (readUS(us_ll) < max && readUS(us_lr) < max && readUS(us_ll) - dev < readUS(us_lr))
+//         {
+//             motorControl(m_fr, speed + speedDiff, BACKWARD);
+//             motorControl(m_br, speed + speedDiff, BACKWARD);
+//             motorControl(m_bl, speed, FORWARD);
+//             motorControl(m_fl, speed, FORWARD);
+//         }
+//         else if (readUS(us_ll) < max && readUS(us_lr) < max && readUS(us_ll) > readUS(us_lr) - dev)
+//         {
+//             motorControl(m_bl, speed + speedDiff, FORWARD);
+//             motorControl(m_fl, speed + speedDiff, FORWARD);
+//             motorControl(m_fr, speed, BACKWARD);
+//             motorControl(m_br, speed, BACKWARD);
+//         }
+//         else
+//         {
+//             motorControl(m_br, speed, BACKWARD);
+//             motorControl(m_fr, speed, BACKWARD);
+//             motorControl(m_fl, speed, FORWARD);
+//             motorControl(m_bl, speed, FORWARD);
+//         }
+//     }
     
-    stopRobot();
-}
+//     stopRobot();
+// }
 
-void smartDrive(int speed, int dir)
-{
-  int dist = 30;
-  int flag = 1;
-  bool both = false;
-  while(flag)
-  {
-    if(dir == FORWARD || dir == BACKWARD)
-    {
-      if(readUS(US_RR) < dist || readUS(US_RL) < dist)
-      {
-        alignedDrive(speed, dir, RIGHT, both);
-        flag = 0;
-      }
-      else if(readUS(US_LR) < dist || readUS(US_LL) < dist)
-      {
-        alignedDrive(speed, dir, LEFT, both);
-        flag = 0;
-      }
-      else
-      {
-        while(dir == BACKWARD ? (readUS(US_RL) > dist && readUS(US_LR) > dist) : (readUS(US_RR) > dist && readUS(US_LL) > dist))
-        {
-          drive(speed, dir);
-        }
-        delay(100);
-        stopRobot();
-        both = true;
-      }
-    }
-    else if(dir == LEFT || dir == RIGHT)
-    {
-      if(readUS(US_FR) < dist || readUS(US_FL) < dist)
-      {
-        alignedDrive(speed, dir, FORWARD, both);
-        flag = 0;
-      }
-      else if(readUS(US_BR) < dist || readUS(US_BL) < dist)
-      {
-        alignedDrive(speed, dir, BACKWARD, both);
-        flag = 0;
-      }
-      else
-      {
-        while(dir == RIGHT ? (readUS(US_BR) > dist && readUS(US_FL) > dist) : (readUS(US_FR) > dist && readUS(US_BL) > dist))
-        {
-          drive(speed, dir);
-        }
-        delay(100);
-        stopRobot();
-        both = true;
-      }
-    }
-    delay(100);
-  }
-  drive(speed, dir);
-  delay(-2.5*speed + 215);
-  stopRobot();
-  digitalWrite(M_FAN, LOW);
-}
+// void smartDrive(int speed, int dir)
+// {
+//   int dist = 30;
+//   int flag = 1;
+//   bool both = false;
+//   while(flag)
+//   {
+//     if(dir == FORWARD || dir == BACKWARD)
+//     {
+//       if(readUS(US_RR) < dist || readUS(US_RL) < dist)
+//       {
+//         alignedDrive(speed, dir, RIGHT, both);
+//         flag = 0;
+//       }
+//       else if(readUS(US_LR) < dist || readUS(US_LL) < dist)
+//       {
+//         alignedDrive(speed, dir, LEFT, both);
+//         flag = 0;
+//       }
+//       else
+//       {
+//         while(dir == BACKWARD ? (readUS(US_RL) > dist && readUS(US_LR) > dist) : (readUS(US_RR) > dist && readUS(US_LL) > dist))
+//         {
+//           drive(speed, dir);
+//         }
+//         delay(100);
+//         stopRobot();
+//         both = true;
+//       }
+//     }
+//     else if(dir == LEFT || dir == RIGHT)
+//     {
+//       if(readUS(US_FR) < dist || readUS(US_FL) < dist)
+//       {
+//         alignedDrive(speed, dir, FORWARD, both);
+//         flag = 0;
+//       }
+//       else if(readUS(US_BR) < dist || readUS(US_BL) < dist)
+//       {
+//         alignedDrive(speed, dir, BACKWARD, both);
+//         flag = 0;
+//       }
+//       else
+//       {
+//         while(dir == RIGHT ? (readUS(US_BR) > dist && readUS(US_FL) > dist) : (readUS(US_FR) > dist && readUS(US_BL) > dist))
+//         {
+//           drive(speed, dir);
+//         }
+//         delay(100);
+//         stopRobot();
+//         both = true;
+//       }
+//     }
+//     delay(100);
+//   }
+//   drive(speed, dir);
+//   delay(-2.5*speed + 215);
+//   stopRobot();
+//   digitalWrite(M_FAN, LOW);
+// }
 
 
 void gyroUSDrive(int speed)
@@ -709,6 +711,9 @@ void gyroUSDrive(int speed)
     motorControl(M_BL, speed - usFix, FORWARD);
   }
   stopRobot();
+  delay(400);
+  stopRobot();
+  delay(400);
 }
 
 bool checkHole(int us, bool flag)
@@ -717,216 +722,216 @@ bool checkHole(int us, bool flag)
   return readUS(us) >= holeDist && flag;
 }
 
-void wallDrive(int speed, int dir, int face, bool both)
-{
-    int val = 7;
-    int dist = 30;
-    int curr = 0;
-    int limit = 80;
-    double p = 3;
+// void wallDrive(int speed, int dir, int face, bool both)
+// {
+//     int val = 7;
+//     int dist = 30;
+//     int curr = 0;
+//     int limit = 80;
+//     double p = 3;
   
-    drive(speed, dir);
+//     drive(speed, dir);
     
-    switch(dir)
-    {
-      case FORWARD:
-        switch(face)
-        {
-          case RIGHT:
-            while(!both ? readUS(US_RR) < dist : readUS(US_RR) < dist && readUS(US_LL) < dist)
-            {
-              curr = val - (int)(((int)readUS(US_RR) + (int)readUS(US_RL)) / 2);
-              if(curr < 0)
-              {
-                motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p),BACKWARD);
-                motorControl(M_FL, speed, FORWARD);
-                motorControl(M_BR, speed, BACKWARD);
-                motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//     switch(dir)
+//     {
+//       case FORWARD:
+//         switch(face)
+//         {
+//           case RIGHT:
+//             while(!both ? readUS(US_RR) < dist : readUS(US_RR) < dist && readUS(US_LL) < dist)
+//             {
+//               curr = val - (int)(((int)readUS(US_RR) + (int)readUS(US_RL)) / 2);
+//               if(curr < 0)
+//               {
+//                 motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p),BACKWARD);
+//                 motorControl(M_FL, speed, FORWARD);
+//                 motorControl(M_BR, speed, BACKWARD);
+//                 motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
                
-              }
-              else
-              {
-                motorControl(M_FR, speed, BACKWARD);
-                motorControl(M_FL, (speed + curr * p * -1) > limit ? limit : (speed + curr *p* -1),FORWARD);
-                motorControl(M_BR, (speed + curr * p * -1) > limit ? limit : (speed + curr *p* -1),BACKWARD);
-                motorControl(M_BL, speed, FORWARD);
-              }
-              gyroTurn(0, speed);
-            }
-            break;
-          case LEFT:
-            while(!both ? readUS(US_RR) < dist : readUS(US_RR) < dist && readUS(US_LL) < dist)
-            {
-              curr = val - (int)(((int)readUS(US_LR) + (int)readUS(US_LL)) / 2);
-              if(curr < 0)
-              {
-                motorControl(M_FR, speed,  BACKWARD);
-                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_BL, speed, FORWARD);
-              }
-              else
-              {
-                motorControl(M_FR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
-                motorControl(M_FL, speed, FORWARD);
-                motorControl(M_BR, speed, BACKWARD);
-                motorControl(M_BL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
-              }
-              gyroTurn(0, speed);
-            }
+//               }
+//               else
+//               {
+//                 motorControl(M_FR, speed, BACKWARD);
+//                 motorControl(M_FL, (speed + curr * p * -1) > limit ? limit : (speed + curr *p* -1),FORWARD);
+//                 motorControl(M_BR, (speed + curr * p * -1) > limit ? limit : (speed + curr *p* -1),BACKWARD);
+//                 motorControl(M_BL, speed, FORWARD);
+//               }
+//               gyroTurn(0, speed);
+//             }
+//             break;
+//           case LEFT:
+//             while(!both ? readUS(US_RR) < dist : readUS(US_RR) < dist && readUS(US_LL) < dist)
+//             {
+//               curr = val - (int)(((int)readUS(US_LR) + (int)readUS(US_LL)) / 2);
+//               if(curr < 0)
+//               {
+//                 motorControl(M_FR, speed,  BACKWARD);
+//                 motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//                 motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//                 motorControl(M_BL, speed, FORWARD);
+//               }
+//               else
+//               {
+//                 motorControl(M_FR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
+//                 motorControl(M_FL, speed, FORWARD);
+//                 motorControl(M_BR, speed, BACKWARD);
+//                 motorControl(M_BL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
+//               }
+//               gyroTurn(0, speed);
+//             }
 
-            break;
-        }
-        break;
-      case BACKWARD:
-        switch(face)
-        {
-          case RIGHT:
-            while(!both ? readUS(US_RL) < dist : readUS(US_RL) < dist && readUS(US_LR) < dist)
-            {
-              curr = val - (int)(((int)readUS(US_RR) + (int)readUS(US_RL)) / 2);
-              if(curr < 0)
-              {
-                motorControl(M_FR, speed,FORWARD);
-                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-                motorControl(M_BL, speed, BACKWARD);
+//             break;
+//         }
+//         break;
+//       case BACKWARD:
+//         switch(face)
+//         {
+//           case RIGHT:
+//             while(!both ? readUS(US_RL) < dist : readUS(US_RL) < dist && readUS(US_LR) < dist)
+//             {
+//               curr = val - (int)(((int)readUS(US_RR) + (int)readUS(US_RL)) / 2);
+//               if(curr < 0)
+//               {
+//                 motorControl(M_FR, speed,FORWARD);
+//                 motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//                 motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//                 motorControl(M_BL, speed, BACKWARD);
                
-              }
-              else
-              {
-                motorControl(M_FR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
-                motorControl(M_FL, speed,BACKWARD);
-                motorControl(M_BR, speed,FORWARD);
-                motorControl(M_BL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
-              }
-              gyroTurn(0, speed);
-            }
-            break;
-          case LEFT:
-            while(!both ? readUS(US_RL) < dist : readUS(US_LR) < dist && readUS(US_RL) < dist)
-            {
-              curr = val - (int)(((int)readUS(US_LR) + (int)readUS(US_LL)) / 2);
-              if(curr < 0)
-              {
-                motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p),  FORWARD);
-                motorControl(M_FL, speed, BACKWARD);
-                motorControl(M_BR, speed, FORWARD);
-                motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-              }
-              else
-              {
-                motorControl(M_FR, speed, FORWARD);
-                motorControl(M_FL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
-                motorControl(M_BR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
-                motorControl(M_BL, speed, BACKWARD);
-              }
-              gyroTurn(0, speed);
-            }
-            break;
-        }
-        break;
-      case RIGHT:
-        switch(face)
-        {
-          case FORWARD:
-            while(!both ? readUS(US_FR) < dist : readUS(US_FR) < dist && readUS(US_BL) < dist)
-            {
-              curr = val - (int)(((int)readUS(US_FR) + (int)readUS(US_FL)) / 2);
-              if(curr < 0)
-              {
-                motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-                motorControl(M_FL, speed, FORWARD);
-                motorControl(M_BR, speed, BACKWARD);
-                motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//               }
+//               else
+//               {
+//                 motorControl(M_FR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
+//                 motorControl(M_FL, speed,BACKWARD);
+//                 motorControl(M_BR, speed,FORWARD);
+//                 motorControl(M_BL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
+//               }
+//               gyroTurn(0, speed);
+//             }
+//             break;
+//           case LEFT:
+//             while(!both ? readUS(US_RL) < dist : readUS(US_LR) < dist && readUS(US_RL) < dist)
+//             {
+//               curr = val - (int)(((int)readUS(US_LR) + (int)readUS(US_LL)) / 2);
+//               if(curr < 0)
+//               {
+//                 motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p),  FORWARD);
+//                 motorControl(M_FL, speed, BACKWARD);
+//                 motorControl(M_BR, speed, FORWARD);
+//                 motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//               }
+//               else
+//               {
+//                 motorControl(M_FR, speed, FORWARD);
+//                 motorControl(M_FL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
+//                 motorControl(M_BR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
+//                 motorControl(M_BL, speed, BACKWARD);
+//               }
+//               gyroTurn(0, speed);
+//             }
+//             break;
+//         }
+//         break;
+//       case RIGHT:
+//         switch(face)
+//         {
+//           case FORWARD:
+//             while(!both ? readUS(US_FR) < dist : readUS(US_FR) < dist && readUS(US_BL) < dist)
+//             {
+//               curr = val - (int)(((int)readUS(US_FR) + (int)readUS(US_FL)) / 2);
+//               if(curr < 0)
+//               {
+//                 motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//                 motorControl(M_FL, speed, FORWARD);
+//                 motorControl(M_BR, speed, BACKWARD);
+//                 motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
                
-              }
-              else
-              {
-                motorControl(M_FR, speed, FORWARD);
-                motorControl(M_FL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
-                motorControl(M_BR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1),BACKWARD);
-                motorControl(M_BL, speed, BACKWARD);
-              }
-              gyroTurn(0, speed);
-            }
-            break;
-          case BACKWARD:
-            while(!both ? readUS(US_BL) < dist : readUS(US_BL) < dist && readUS(US_FR) < dist)
-            {
-              curr = val - (int)(((int)readUS(US_BR) + (int)readUS(US_BL)) / 2);
-              if(curr < 0)
-              {
-                motorControl(M_FR, speed, FORWARD);
-                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_BL, speed, BACKWARD);
+//               }
+//               else
+//               {
+//                 motorControl(M_FR, speed, FORWARD);
+//                 motorControl(M_FL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
+//                 motorControl(M_BR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1),BACKWARD);
+//                 motorControl(M_BL, speed, BACKWARD);
+//               }
+//               gyroTurn(0, speed);
+//             }
+//             break;
+//           case BACKWARD:
+//             while(!both ? readUS(US_BL) < dist : readUS(US_BL) < dist && readUS(US_FR) < dist)
+//             {
+//               curr = val - (int)(((int)readUS(US_BR) + (int)readUS(US_BL)) / 2);
+//               if(curr < 0)
+//               {
+//                 motorControl(M_FR, speed, FORWARD);
+//                 motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//                 motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//                 motorControl(M_BL, speed, BACKWARD);
                
-              }
-              else
-              {
-                motorControl(M_FR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
-                motorControl(M_FL, speed, FORWARD);
-                motorControl(M_BR, speed, BACKWARD);
-                motorControl(M_BL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
-              }
-              gyroTurn(0, speed);
-            }
-            break;
-        }
-        break;
-      case LEFT:
-        switch(face)
-        {
-          case FORWARD:
-            while(!both ? readUS(US_FL) < dist : readUS(US_FL) < dist && readUS(US_BR) < dist)
-            {
-              curr = val - (int)(((int)readUS(US_FR) + (int)readUS(US_FL)) / 2);
-              if(curr < 0)
-              {
-                motorControl(M_FR, speed, BACKWARD);
-                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-                motorControl(M_BL, speed, FORWARD);
+//               }
+//               else
+//               {
+//                 motorControl(M_FR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
+//                 motorControl(M_FL, speed, FORWARD);
+//                 motorControl(M_BR, speed, BACKWARD);
+//                 motorControl(M_BL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
+//               }
+//               gyroTurn(0, speed);
+//             }
+//             break;
+//         }
+//         break;
+//       case LEFT:
+//         switch(face)
+//         {
+//           case FORWARD:
+//             while(!both ? readUS(US_FL) < dist : readUS(US_FL) < dist && readUS(US_BR) < dist)
+//             {
+//               curr = val - (int)(((int)readUS(US_FR) + (int)readUS(US_FL)) / 2);
+//               if(curr < 0)
+//               {
+//                 motorControl(M_FR, speed, BACKWARD);
+//                 motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//                 motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//                 motorControl(M_BL, speed, FORWARD);
                
-              }
-              else
-              {
-                motorControl(M_FR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
-                motorControl(M_FL, speed, BACKWARD);
-                motorControl(M_BR, speed, FORWARD);
-                motorControl(M_BL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
-              }
-              gyroTurn(0, speed);
-            }
-            break;
-          case BACKWARD:
-            while(!both ? readUS(US_BR) < dist : readUS(US_BR) < dist && readUS(US_FL) < dist)
-            {
-              curr = val - (int)(((int)readUS(US_BR) + (int)readUS(US_BL)) / 2);
-              if(curr < 0)
-              {
-                motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_FL, speed, BACKWARD);
-                motorControl(M_BR, speed, FORWARD);
-                motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//               }
+//               else
+//               {
+//                 motorControl(M_FR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
+//                 motorControl(M_FL, speed, BACKWARD);
+//                 motorControl(M_BR, speed, FORWARD);
+//                 motorControl(M_BL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
+//               }
+//               gyroTurn(0, speed);
+//             }
+//             break;
+//           case BACKWARD:
+//             while(!both ? readUS(US_BR) < dist : readUS(US_BR) < dist && readUS(US_FL) < dist)
+//             {
+//               curr = val - (int)(((int)readUS(US_BR) + (int)readUS(US_BL)) / 2);
+//               if(curr < 0)
+//               {
+//                 motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//                 motorControl(M_FL, speed, BACKWARD);
+//                 motorControl(M_BR, speed, FORWARD);
+//                 motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
                
-              }
-              else
-              {
-                motorControl(M_FR, speed, BACKWARD);
-                motorControl(M_FL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
-                motorControl(M_BR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
-                motorControl(M_BL, speed, FORWARD);
-              }
-              gyroTurn(0, speed);
-            }
-            break;
-        }
-        break;
-    }
-    stopRobot();
-}
+//               }
+//               else
+//               {
+//                 motorControl(M_FR, speed, BACKWARD);
+//                 motorControl(M_FL, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), BACKWARD);
+//                 motorControl(M_BR, (speed + curr *p* -1) > limit ? limit : (speed + curr *p* -1), FORWARD);
+//                 motorControl(M_BL, speed, FORWARD);
+//               }
+//               gyroTurn(0, speed);
+//             }
+//             break;
+//         }
+//         break;
+//     }
+//     stopRobot();
+// }
 
 void faceCycle(int face)
 {
@@ -1289,458 +1294,457 @@ void translateDrive(int speed)
         break;
     }
     gyroUSDrive(speed);
-    delay(200);
   }
   stopRobot();
   delay(500);
   faceCycle(FORWARD);
 }
 
-void cornerAlign(int speed, int corner, int dist)
-{
+// void cornerAlign(int speed, int corner, int dist)
+// {
   
-  switch(corner)
-  {
-    case FR:
-      align(FORWARD);
-      delay(100);
-      while((int)((readUS(US_FR) + readUS(US_FL)) / 2) < dist - 1 || (int)((readUS(US_FR) + readUS(US_FL)) / 2) > dist + 1)
-      {
-        if((int)((readUS(US_FR) + readUS(US_FL)) / 2) < dist)
-        {
-          drive(speed, BACKWARD);
-        }
-        else
-        {
-          drive(speed, FORWARD);
-        }
-      }
-      stopRobot();
-      delay(100);
-      while((int)((readUS(US_RR) + readUS(US_RL)) / 2) < dist - 1 || (int)((readUS(US_RR) + readUS(US_RL)) / 2) > dist + 1)
-      {
-        if((int)((readUS(US_RR) + readUS(US_RL)) / 2) < dist)
-        {
-          drive(speed, LEFT);
-        }
-        else
-        {
-          drive(speed, RIGHT);
-        }
-      }
-      stopRobot();
-      delay(100);
-      align(RIGHT);
-      break;
-    case FL:
-      align(FORWARD);
-      delay(100);
-      while((int)((readUS(US_FR) + readUS(US_FL)) / 2) < dist - 1 || (int)((readUS(US_FR) + readUS(US_FL)) / 2) > dist + 1)
-      {
-        if((int)((readUS(US_FR) + readUS(US_FL)) / 2) < dist)
-        {
-          drive(speed, BACKWARD);
-        }
-        else
-        {
-          drive(speed, FORWARD);
-        }
-      }
-      stopRobot();
-      delay(100);
-      while((int)((readUS(US_LR) + readUS(US_LL)) / 2) < dist - 1 || (int)((readUS(US_LR) + readUS(US_LL)) / 2) > dist + 1)
-      {
-        if((int)((readUS(US_LR) + readUS(US_LL)) / 2) < dist)
-        {
-          drive(speed, RIGHT);
-        }
-        else
-        {
-          drive(speed, LEFT);
-        }
-      }
-      stopRobot();
-      delay(100);
-      align(LEFT);
-      break;
-    case BR:
-      align(BACKWARD);
-      delay(100);
-      while((int)((readUS(US_BR) + readUS(US_BL)) / 2) < dist - 1 || (int)((readUS(US_BR) + readUS(US_BL)) / 2) > dist + 1)
-      {
-        if((int)((readUS(US_BR) + readUS(US_BL)) / 2) < dist)
-        {
-          drive(speed, FORWARD);
-        }
-        else
-        {
-          drive(speed, BACKWARD);
-        }
-      }
-      stopRobot();
-      delay(100);
-      while((int)((readUS(US_RR) + readUS(US_RL)) / 2) < dist - 1 || (int)((readUS(US_RR) + readUS(US_RL)) / 2) > dist + 1)
-      {
-        if((int)((readUS(US_RR) + readUS(US_RL)) / 2) < dist)
-        {
-          drive(speed, LEFT);
-        }
-        else
-        {
-          drive(speed, RIGHT);
-        }
-      }
-      stopRobot();
-      delay(100);
-      align(RIGHT);
-      break;
-    case BL:
-      align(BACKWARD);
-      delay(100);
-      while((int)((readUS(US_BR) + readUS(US_BL)) / 2) < dist - 1 || (int)((readUS(US_BR) + readUS(US_BL)) / 2) > dist + 1)
-      {
-        if((int)((readUS(US_BR) + readUS(US_BL)) / 2) < dist)
-        {
-          drive(speed, FORWARD);
-        }
-        else
-        {
-          drive(speed, BACKWARD);
-        }
-      }
-      stopRobot();
-      delay(100);
-      while((int)((readUS(US_LR) + readUS(US_LL)) / 2) < dist - 1 || (int)((readUS(US_LR) + readUS(US_LL)) / 2) > dist + 1)
-      {
-        if((int)((readUS(US_LR) + readUS(US_LL)) / 2) < dist)
-        {
-          drive(speed, RIGHT);
-        }
-        else
-        {
-          drive(speed, LEFT);
-        }
-      }
-      stopRobot();
-      delay(100);
-      align(LEFT);
-      break;
-  }
-}
+//   switch(corner)
+//   {
+//     case FR:
+//       align(FORWARD);
+//       delay(100);
+//       while((int)((readUS(US_FR) + readUS(US_FL)) / 2) < dist - 1 || (int)((readUS(US_FR) + readUS(US_FL)) / 2) > dist + 1)
+//       {
+//         if((int)((readUS(US_FR) + readUS(US_FL)) / 2) < dist)
+//         {
+//           drive(speed, BACKWARD);
+//         }
+//         else
+//         {
+//           drive(speed, FORWARD);
+//         }
+//       }
+//       stopRobot();
+//       delay(100);
+//       while((int)((readUS(US_RR) + readUS(US_RL)) / 2) < dist - 1 || (int)((readUS(US_RR) + readUS(US_RL)) / 2) > dist + 1)
+//       {
+//         if((int)((readUS(US_RR) + readUS(US_RL)) / 2) < dist)
+//         {
+//           drive(speed, LEFT);
+//         }
+//         else
+//         {
+//           drive(speed, RIGHT);
+//         }
+//       }
+//       stopRobot();
+//       delay(100);
+//       align(RIGHT);
+//       break;
+//     case FL:
+//       align(FORWARD);
+//       delay(100);
+//       while((int)((readUS(US_FR) + readUS(US_FL)) / 2) < dist - 1 || (int)((readUS(US_FR) + readUS(US_FL)) / 2) > dist + 1)
+//       {
+//         if((int)((readUS(US_FR) + readUS(US_FL)) / 2) < dist)
+//         {
+//           drive(speed, BACKWARD);
+//         }
+//         else
+//         {
+//           drive(speed, FORWARD);
+//         }
+//       }
+//       stopRobot();
+//       delay(100);
+//       while((int)((readUS(US_LR) + readUS(US_LL)) / 2) < dist - 1 || (int)((readUS(US_LR) + readUS(US_LL)) / 2) > dist + 1)
+//       {
+//         if((int)((readUS(US_LR) + readUS(US_LL)) / 2) < dist)
+//         {
+//           drive(speed, RIGHT);
+//         }
+//         else
+//         {
+//           drive(speed, LEFT);
+//         }
+//       }
+//       stopRobot();
+//       delay(100);
+//       align(LEFT);
+//       break;
+//     case BR:
+//       align(BACKWARD);
+//       delay(100);
+//       while((int)((readUS(US_BR) + readUS(US_BL)) / 2) < dist - 1 || (int)((readUS(US_BR) + readUS(US_BL)) / 2) > dist + 1)
+//       {
+//         if((int)((readUS(US_BR) + readUS(US_BL)) / 2) < dist)
+//         {
+//           drive(speed, FORWARD);
+//         }
+//         else
+//         {
+//           drive(speed, BACKWARD);
+//         }
+//       }
+//       stopRobot();
+//       delay(100);
+//       while((int)((readUS(US_RR) + readUS(US_RL)) / 2) < dist - 1 || (int)((readUS(US_RR) + readUS(US_RL)) / 2) > dist + 1)
+//       {
+//         if((int)((readUS(US_RR) + readUS(US_RL)) / 2) < dist)
+//         {
+//           drive(speed, LEFT);
+//         }
+//         else
+//         {
+//           drive(speed, RIGHT);
+//         }
+//       }
+//       stopRobot();
+//       delay(100);
+//       align(RIGHT);
+//       break;
+//     case BL:
+//       align(BACKWARD);
+//       delay(100);
+//       while((int)((readUS(US_BR) + readUS(US_BL)) / 2) < dist - 1 || (int)((readUS(US_BR) + readUS(US_BL)) / 2) > dist + 1)
+//       {
+//         if((int)((readUS(US_BR) + readUS(US_BL)) / 2) < dist)
+//         {
+//           drive(speed, FORWARD);
+//         }
+//         else
+//         {
+//           drive(speed, BACKWARD);
+//         }
+//       }
+//       stopRobot();
+//       delay(100);
+//       while((int)((readUS(US_LR) + readUS(US_LL)) / 2) < dist - 1 || (int)((readUS(US_LR) + readUS(US_LL)) / 2) > dist + 1)
+//       {
+//         if((int)((readUS(US_LR) + readUS(US_LL)) / 2) < dist)
+//         {
+//           drive(speed, RIGHT);
+//         }
+//         else
+//         {
+//           drive(speed, LEFT);
+//         }
+//       }
+//       stopRobot();
+//       delay(100);
+//       align(LEFT);
+//       break;
+//   }
+// }
 
-void alignedDrive(int speed, int dir, int face, bool both)
-{
-    int dist = 30;
-    int curr = 0;
-    int limit = 80;
-    double p = 5;
+// void alignedDrive(int speed, int dir, int face, bool both)
+// {
+//     int dist = 30;
+//     int curr = 0;
+//     int limit = 80;
+//     double p = 5;
 
-    drive(speed, dir);
+//     drive(speed, dir);
     
-    switch(dir)
-    {
-      case FORWARD:
-        switch(face)
-        {
-          case RIGHT:
-            while(!both ? readUS(US_RR) < dist : readUS(US_RR) < dist && readUS(US_LL) < dist)
-            {
-              curr = (int)readUS(US_RR) - (int)readUS(US_RL);
-              if(curr < -1)
-              {
-                motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_FL, speed, FORWARD);
-                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_BL, speed, FORWARD);
+//     switch(dir)
+//     {
+//       case FORWARD:
+//         switch(face)
+//         {
+//           case RIGHT:
+//             while(!both ? readUS(US_RR) < dist : readUS(US_RR) < dist && readUS(US_LL) < dist)
+//             {
+//               curr = (int)readUS(US_RR) - (int)readUS(US_RL);
+//               if(curr < -1)
+//               {
+//                 motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//                 motorControl(M_FL, speed, FORWARD);
+//                 motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//                 motorControl(M_BL, speed, FORWARD);
                
-              }
-              else if(curr > 1)
-              {
-                motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_FL, speed,FORWARD);
-                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_BL, speed, FORWARD);
-              }
-              else
-              {
-                wallDrive(speed, dir, face, both);
-              }
-            }
-            break;
-          case LEFT:
-            while(!both ? readUS(US_LL) < dist : readUS(US_RR) < dist && readUS(US_LL) < dist)
-            {
-              curr = (int)readUS(US_LL) - (int)readUS(US_LR);
-              if(curr < -1)
-              {
-                motorControl(M_FR, speed,  BACKWARD);
-                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-                motorControl(M_BR, speed, BACKWARD);
-                motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-              }
-              else if(curr > 1)
-              {
-                motorControl(M_FR, speed,  BACKWARD);
-                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-                motorControl(M_BR, speed, BACKWARD);
-                motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-              }
-              else
-              {
-                wallDrive(speed, dir, face, both);
-              }
-            }
-            break;
-        }
-        break;
-      case BACKWARD:
-        switch(face)
-        {
-          case RIGHT:
-            while(!both ? readUS(US_RL) < dist : readUS(US_RL) < dist && readUS(US_LR) < dist)
-            {
-              curr = (int)readUS(US_RL) - (int)readUS(US_RR);
-              if(curr < -1)
-              {
-                motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-                motorControl(M_FL, speed, BACKWARD);
-                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-                motorControl(M_BL, speed, BACKWARD);
+//               }
+//               else if(curr > 1)
+//               {
+//                 motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//                 motorControl(M_FL, speed,FORWARD);
+//                 motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//                 motorControl(M_BL, speed, FORWARD);
+//               }
+//               else
+//               {
+//                 wallDrive(speed, dir, face, both);
+//               }
+//             }
+//             break;
+//           case LEFT:
+//             while(!both ? readUS(US_LL) < dist : readUS(US_RR) < dist && readUS(US_LL) < dist)
+//             {
+//               curr = (int)readUS(US_LL) - (int)readUS(US_LR);
+//               if(curr < -1)
+//               {
+//                 motorControl(M_FR, speed,  BACKWARD);
+//                 motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//                 motorControl(M_BR, speed, BACKWARD);
+//                 motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//               }
+//               else if(curr > 1)
+//               {
+//                 motorControl(M_FR, speed,  BACKWARD);
+//                 motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//                 motorControl(M_BR, speed, BACKWARD);
+//                 motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//               }
+//               else
+//               {
+//                 wallDrive(speed, dir, face, both);
+//               }
+//             }
+//             break;
+//         }
+//         break;
+//       case BACKWARD:
+//         switch(face)
+//         {
+//           case RIGHT:
+//             while(!both ? readUS(US_RL) < dist : readUS(US_RL) < dist && readUS(US_LR) < dist)
+//             {
+//               curr = (int)readUS(US_RL) - (int)readUS(US_RR);
+//               if(curr < -1)
+//               {
+//                 motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//                 motorControl(M_FL, speed, BACKWARD);
+//                 motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//                 motorControl(M_BL, speed, BACKWARD);
                
-              }
-              else if(curr > 1)
-              {
-                motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-                motorControl(M_FL, speed,BACKWARD);
-                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p),FORWARD);
-                motorControl(M_BL, speed, BACKWARD);
-              }
-              else
-              {
-                wallDrive(speed, dir, face, both);
-              }
+//               }
+//               else if(curr > 1)
+//               {
+//                 motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//                 motorControl(M_FL, speed,BACKWARD);
+//                 motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p),FORWARD);
+//                 motorControl(M_BL, speed, BACKWARD);
+//               }
+//               else
+//               {
+//                 wallDrive(speed, dir, face, both);
+//               }
               
-            }
-            break;
-          case LEFT:
-            while(!both ? readUS(US_LR) < dist : readUS(US_LR) < dist && readUS(US_RL) < dist)
-            {
-              curr = (int)readUS(US_LR) - (int)readUS(US_LL);
-              if(curr < -1)
-              {
-                motorControl(M_FR, speed,  FORWARD);
-                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_BR, speed, FORWARD);
-                motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-              }
-              else if(curr > 1)
-              {
-                motorControl(M_FR, speed, FORWARD);
-                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_BR, speed, FORWARD);
-                motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-              }
-              else
-              {
-                wallDrive(speed, dir, face, both);
-              }
-            }
-            break;
-        }
-        break;
-      case RIGHT:
-        switch(face)
-        {
-          case FORWARD:
-            while(!both ? readUS(US_FR) < dist : readUS(US_FR) < dist && readUS(US_BL) < dist)
-            {
-              curr = (int)readUS(US_FL) - (int)readUS(US_FR);
-              if(curr < -1)
-              {
-                motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-                motorControl(M_BR, speed, BACKWARD);
-                motorControl(M_BL, speed, BACKWARD);
+//             }
+//             break;
+//           case LEFT:
+//             while(!both ? readUS(US_LR) < dist : readUS(US_LR) < dist && readUS(US_RL) < dist)
+//             {
+//               curr = (int)readUS(US_LR) - (int)readUS(US_LL);
+//               if(curr < -1)
+//               {
+//                 motorControl(M_FR, speed,  FORWARD);
+//                 motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//                 motorControl(M_BR, speed, FORWARD);
+//                 motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//               }
+//               else if(curr > 1)
+//               {
+//                 motorControl(M_FR, speed, FORWARD);
+//                 motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//                 motorControl(M_BR, speed, FORWARD);
+//                 motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//               }
+//               else
+//               {
+//                 wallDrive(speed, dir, face, both);
+//               }
+//             }
+//             break;
+//         }
+//         break;
+//       case RIGHT:
+//         switch(face)
+//         {
+//           case FORWARD:
+//             while(!both ? readUS(US_FR) < dist : readUS(US_FR) < dist && readUS(US_BL) < dist)
+//             {
+//               curr = (int)readUS(US_FL) - (int)readUS(US_FR);
+//               if(curr < -1)
+//               {
+//                 motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//                 motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//                 motorControl(M_BR, speed, BACKWARD);
+//                 motorControl(M_BL, speed, BACKWARD);
                
-              }
-              else if(curr > 1)
-              {
-                motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-                motorControl(M_BR, speed, BACKWARD);
-                motorControl(M_BL, speed, BACKWARD);
-              }
-              else
-              {
-                wallDrive(speed, dir, face, both);
-              }
-            }
-            break;
-          case BACKWARD:
-            while(!both ? readUS(US_BL) < dist : readUS(US_BL) < dist && readUS(US_FR) < dist)
-            {
-              curr = (int)readUS(US_BR) - (int)readUS(US_BL);
-              if(curr < -1)
-              {
-                motorControl(M_FR, speed, FORWARD);
-                motorControl(M_FL, speed, FORWARD);
-                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//               }
+//               else if(curr > 1)
+//               {
+//                 motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//                 motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//                 motorControl(M_BR, speed, BACKWARD);
+//                 motorControl(M_BL, speed, BACKWARD);
+//               }
+//               else
+//               {
+//                 wallDrive(speed, dir, face, both);
+//               }
+//             }
+//             break;
+//           case BACKWARD:
+//             while(!both ? readUS(US_BL) < dist : readUS(US_BL) < dist && readUS(US_FR) < dist)
+//             {
+//               curr = (int)readUS(US_BR) - (int)readUS(US_BL);
+//               if(curr < -1)
+//               {
+//                 motorControl(M_FR, speed, FORWARD);
+//                 motorControl(M_FL, speed, FORWARD);
+//                 motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//                 motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
                
-              }
-              else if(curr > 1)
-              {
-                motorControl(M_FR, speed, FORWARD);
-                motorControl(M_FL, speed, FORWARD);
-                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-              }
-              else
-              {
-                wallDrive(speed, dir, face, both);
-              }
-            }
-            break;
-        }
-        break;
-      case LEFT:
-        switch(face)
-        {
-          case FORWARD:
-            while(!both ? readUS(US_FL) < dist : readUS(US_FL) < dist && readUS(US_BR) < dist)
-            {
-              curr = (int)readUS(US_FR) - (int)readUS(US_FL);
-              if(curr < -1)
-              {
-                motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_BR, speed, FORWARD);
-                motorControl(M_BL, speed, FORWARD);
+//               }
+//               else if(curr > 1)
+//               {
+//                 motorControl(M_FR, speed, FORWARD);
+//                 motorControl(M_FL, speed, FORWARD);
+//                 motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//                 motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//               }
+//               else
+//               {
+//                 wallDrive(speed, dir, face, both);
+//               }
+//             }
+//             break;
+//         }
+//         break;
+//       case LEFT:
+//         switch(face)
+//         {
+//           case FORWARD:
+//             while(!both ? readUS(US_FL) < dist : readUS(US_FL) < dist && readUS(US_BR) < dist)
+//             {
+//               curr = (int)readUS(US_FR) - (int)readUS(US_FL);
+//               if(curr < -1)
+//               {
+//                 motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//                 motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//                 motorControl(M_BR, speed, FORWARD);
+//                 motorControl(M_BL, speed, FORWARD);
                
-              }
-              else if(curr > 1)
-              {
-                motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
-                motorControl(M_BR, speed, FORWARD);
-                motorControl(M_BL, speed, FORWARD);
-              }
-              else
-              {
-                wallDrive(speed, dir, face, both);
-              }
-            }
-            break;
-          case BACKWARD:
-            while(!both ? readUS(US_BR) < dist : readUS(US_BR) < dist && readUS(US_FL) < dist)
-            {
-              curr = (int)readUS(US_BL) - (int)readUS(US_BR);
-              if(curr < -1)
-              {
-                motorControl(M_FR, speed, BACKWARD);
-                motorControl(M_FL, speed, BACKWARD);
-                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-                motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//               }
+//               else if(curr > 1)
+//               {
+//                 motorControl(M_FR, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//                 motorControl(M_FL, (speed + curr * p) > limit ? limit : (speed + curr * p), BACKWARD);
+//                 motorControl(M_BR, speed, FORWARD);
+//                 motorControl(M_BL, speed, FORWARD);
+//               }
+//               else
+//               {
+//                 wallDrive(speed, dir, face, both);
+//               }
+//             }
+//             break;
+//           case BACKWARD:
+//             while(!both ? readUS(US_BR) < dist : readUS(US_BR) < dist && readUS(US_FL) < dist)
+//             {
+//               curr = (int)readUS(US_BL) - (int)readUS(US_BR);
+//               if(curr < -1)
+//               {
+//                 motorControl(M_FR, speed, BACKWARD);
+//                 motorControl(M_FL, speed, BACKWARD);
+//                 motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//                 motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
                
-              }
-              else if(curr > 1)
-              {
-                motorControl(M_FR, speed, BACKWARD);
-                motorControl(M_FL, speed, BACKWARD);
-                motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-                motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
-              }
-              else
-              {
-                wallDrive(speed, dir, face, both);
-              }
-            }
-            break;
-        }
-        break;
-    }
-    stopRobot();
-}
+//               }
+//               else if(curr > 1)
+//               {
+//                 motorControl(M_FR, speed, BACKWARD);
+//                 motorControl(M_FL, speed, BACKWARD);
+//                 motorControl(M_BR, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//                 motorControl(M_BL, (speed + curr * p) > limit ? limit : (speed + curr * p), FORWARD);
+//               }
+//               else
+//               {
+//                 wallDrive(speed, dir, face, both);
+//               }
+//             }
+//             break;
+//         }
+//         break;
+//     }
+//     stopRobot();
+// }
 
-void wallAlign(int face, int dist)
-{
-  int speed = 25;
-  switch(face)
-  {
-    case FORWARD:
-      while(dist != (int)((readUS(US_FL) + readUS(US_FR)) / 2))
-      {
-        if(dist + 1 > (int)((readUS(US_FL) + readUS(US_FR)) / 2))
-        {
-          drive(speed, BACKWARD);
-        }
-        else if(dist - 1 < (int)((readUS(US_FL) + readUS(US_FR)) / 2))
-        {
-          drive(speed, FORWARD);
-        }
-        else
-        {
-          stopRobot();
-        }
-      }
-      stopRobot();
-      break;
-    case BACKWARD:
-      while(dist != (int)((readUS(US_BL) + readUS(US_BR)) / 2))
-      {
-        if(dist + 1 > (int)((readUS(US_BL) + readUS(US_BR)) / 2))
-        {
-          drive(speed, FORWARD);
-        }
-        else if(dist - 1 < (int)((readUS(US_BL) + readUS(US_BR)) / 2))
-        {
-          drive(speed, BACKWARD);
-        }
-        else
-        {
-          stopRobot();
-        }
-      }
-      stopRobot();
-      break;
-    case RIGHT:
-      while(dist != (int)((readUS(US_RL) + readUS(US_RR)) / 2))
-      {
-        if(dist + 1 > (int)((readUS(US_RL) + readUS(US_RR)) / 2))
-        {
-          drive(speed, LEFT);
-        }
-        else if(dist - 1 < (int)((readUS(US_RL) + readUS(US_RR)) / 2))
-        {
-          drive(speed, RIGHT);
-        }
-        else
-        {
-          stopRobot();
-        }
-      }
-      stopRobot();
-      break;
-    case LEFT:
-      while(dist != (int)((readUS(US_LL) + readUS(US_LR)) / 2))
-      {
-        if(dist + 1 > (int)((readUS(US_LL) + readUS(US_LR)) / 2))
-        {
-          drive(speed, RIGHT);
-        }
-        else if(dist - 1 < (int)((readUS(US_LL) + readUS(US_LR)) / 2))
-        {
-          drive(speed, LEFT);
-        }
-        else
-        {
-          stopRobot();
-        }
-      }
-      stopRobot();
-      break;
-  }
-}
+// void wallAlign(int face, int dist)
+// {
+//   int speed = 25;
+//   switch(face)
+//   {
+//     case FORWARD:
+//       while(dist != (int)((readUS(US_FL) + readUS(US_FR)) / 2))
+//       {
+//         if(dist + 1 > (int)((readUS(US_FL) + readUS(US_FR)) / 2))
+//         {
+//           drive(speed, BACKWARD);
+//         }
+//         else if(dist - 1 < (int)((readUS(US_FL) + readUS(US_FR)) / 2))
+//         {
+//           drive(speed, FORWARD);
+//         }
+//         else
+//         {
+//           stopRobot();
+//         }
+//       }
+//       stopRobot();
+//       break;
+//     case BACKWARD:
+//       while(dist != (int)((readUS(US_BL) + readUS(US_BR)) / 2))
+//       {
+//         if(dist + 1 > (int)((readUS(US_BL) + readUS(US_BR)) / 2))
+//         {
+//           drive(speed, FORWARD);
+//         }
+//         else if(dist - 1 < (int)((readUS(US_BL) + readUS(US_BR)) / 2))
+//         {
+//           drive(speed, BACKWARD);
+//         }
+//         else
+//         {
+//           stopRobot();
+//         }
+//       }
+//       stopRobot();
+//       break;
+//     case RIGHT:
+//       while(dist != (int)((readUS(US_RL) + readUS(US_RR)) / 2))
+//       {
+//         if(dist + 1 > (int)((readUS(US_RL) + readUS(US_RR)) / 2))
+//         {
+//           drive(speed, LEFT);
+//         }
+//         else if(dist - 1 < (int)((readUS(US_RL) + readUS(US_RR)) / 2))
+//         {
+//           drive(speed, RIGHT);
+//         }
+//         else
+//         {
+//           stopRobot();
+//         }
+//       }
+//       stopRobot();
+//       break;
+//     case LEFT:
+//       while(dist != (int)((readUS(US_LL) + readUS(US_LR)) / 2))
+//       {
+//         if(dist + 1 > (int)((readUS(US_LL) + readUS(US_LR)) / 2))
+//         {
+//           drive(speed, RIGHT);
+//         }
+//         else if(dist - 1 < (int)((readUS(US_LL) + readUS(US_LR)) / 2))
+//         {
+//           drive(speed, LEFT);
+//         }
+//         else
+//         {
+//           stopRobot();
+//         }
+//       }
+//       stopRobot();
+//       break;
+//   }
+// }
 
 void mapDrive(int speed, int x1, int y1, int x2, int y2)
 {
