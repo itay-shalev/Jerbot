@@ -19,10 +19,10 @@
 #define O_US_FR 48
 #define O_US_RL 44
 #define O_US_RR 42
-#define O_US_BL 40
+#define O_US_BL 30
 #define O_US_LL 38
 #define O_US_LR 36
-#define O_US_BR 34
+#define O_US_BR 40
 #define UV 35
 
 #define SPEED_LIMIT(x) (80 - x)
@@ -114,14 +114,14 @@ const int IR_FR = A0;
 const int IR_FL = A1;
 
 // ***** US Connections ****** //
-int US_FL = 46;
-int US_FR = 48;
-int US_RL = 44;
-int US_RR = 42;
-int US_BL = 40;
-int US_LL = 38;
-int US_LR = 36;
-int US_BR = 34;
+int US_FL = O_US_FL;
+int US_FR = O_US_FR;
+int US_RL = O_US_RL;
+int US_RR = O_US_RR;
+int US_BL = O_US_BL;
+int US_LL = O_US_LL;
+int US_LR = O_US_LR;
+int US_BR = O_US_BR;
 
 // ***** Function declares ***** //
 void mapDrive(int speed, int x1, int y1, int x2, int y2);
@@ -168,6 +168,7 @@ void setup()
 
 void loop() 
 {
+  
   // delay(500);
   // mapDrive(50, HOME_1, ROOM_1_1);
   // delay(100);
@@ -180,8 +181,9 @@ void loop()
   // faceCycle(RIGHT);
   // gyroUSDrive(50);
 
-  //Serial.println(readUS(US_BL));
-  //delay(10);
+  // faceCycle(FORWARD);
+  // Serial.println(readUS(US_LR));
+  // delay(10);
 
   mapDrive(50, HOME_1, ROOM_2_1);
   align(FORWARD);
@@ -190,7 +192,7 @@ void loop()
   align(FORWARD);
   delay(200);
   mapDrive(50, ROOM_3_1, HOME_1);
-  delay(1000000);
+   delay(1000000);
 }
 
 
@@ -381,12 +383,12 @@ double readUS(int US)
     ans += (pulseIn(Echo, HIGH) * 0.034) / 2;
     delayMicroseconds(10);
   }
-  ans = ans / 3.0;
-  if (ans > 200)
-  {
-    stopRobot();
-  }
-  return ans;
+  // ans = ans / 3.0;
+  // if (ans > 200)
+  // {
+  //   stopRobot();
+  // }
+  return ans / 3.0;
 }
 
 
@@ -409,6 +411,7 @@ void align(int face)
   int left_us = 0; 
   int right_us = 0;
   int turnDir = FORWARD;
+  faceCycle(FORWARD);
   switch (face)
   {
       case FORWARD:
@@ -435,11 +438,11 @@ void align(int face)
     Serial.print("\n\n");
     if (err > 0)
     {
-      turn((p * abs(err)) > 60 ? 60 : (p*abs(err)) < 15 ? 15 : (p*abs(err)), RIGHT);
+      turn((p * abs(err)) > 60 ? 60 : (p*abs(err)) < 20 ? 20 : (p*abs(err)), RIGHT);
     }
     else
     {
-      turn((p * abs(err)) > 60 ? 60 : (p*abs(err)) < 15 ? 15 : (p*abs(err)), LEFT);
+      turn((p * abs(err)) > 60 ? 60 : (p*abs(err)) < 20 ? 20 : (p*abs(err)), LEFT);
     }
     err = (int)readUS(left_us) - (int)readUS(right_us);
     Serial.print(abs(err));
@@ -652,7 +655,7 @@ void gyroUSDrive(int speed)
   bool flagUS_RR = false;
   bool flagUS_LL = false;
   bool foundWall = false;
-  int minDist = 40;
+  int minDist = 20;
   int negativeFace = 1;
   
 
@@ -702,16 +705,22 @@ void gyroUSDrive(int speed)
     {
       flagUS_LL = true;
     }
-    yawFix = negativeFace * negativeUS * (((readUS(currRYawUS) - readUS(currLYawUS)) * pYaw > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : (readUS(currRYawUS) - readUS(currLYawUS)) * pYaw));
-    usFix = negativeUS * (((readUS(currDistUS) - wallDist) * pUS) > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : ((readUS(currDistUS) - wallDist) * pUS));
- 
-    motorControl(M_FR, speed - usFix, BACKWARD);
-    motorControl(M_FL, readUS(currRYawUS) > 30 || readUS(currLYawUS) > 30 ? speed : speed - yawFix, FORWARD); // affected by gyro fix
-    motorControl(M_BR, readUS(currRYawUS) > 30 || readUS(currLYawUS) > 30 ? speed : speed + yawFix, BACKWARD); // affected by gyro fix
-    motorControl(M_BL, speed - usFix, FORWARD);
+    
+    if(readUS(currDistUS) > 30)
+    {
+      drive(speed, FORWARD);
+    }
+    else
+    {
+      yawFix = negativeFace * negativeUS * (((readUS(currRYawUS) - readUS(currLYawUS)) * pYaw > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : (readUS(currRYawUS) - readUS(currLYawUS)) * pYaw));
+      usFix = negativeUS * (((readUS(currDistUS) - wallDist) * pUS) > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : ((readUS(currDistUS) - wallDist) * pUS));
+  
+      motorControl(M_FR, speed - usFix, BACKWARD);
+      motorControl(M_FL, readUS(currRYawUS) > 30 || readUS(currLYawUS) > 30 ? speed : speed - yawFix, FORWARD); // affected by gyro fix
+      motorControl(M_BR, readUS(currRYawUS) > 30 || readUS(currLYawUS) > 30 ? speed : speed + yawFix, BACKWARD); // affected by gyro fix
+      motorControl(M_BL, speed - usFix, FORWARD);
+    }
   }
-  stopRobot();
-  delay(400);
   stopRobot();
   delay(400);
 }
