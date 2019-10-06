@@ -168,11 +168,14 @@ void setup()
 
 void loop() 
 {
-  mapDrive(50, HOME_1, ROOM_2_1);
-  scanRoom2();
-  mapDrive(50, ROOM_2_1, ROOM_3_1);
-  scanRoom3();
-  mapDrive(50, ROOM_3_1, HOME_1);
+  mapDrive(50, HOME_1, ROOM_1_1);
+  checkRoom1();
+  if(originalMap[2][8] == '1' && originalMap[5][7] == '0')
+  {
+    mapDrive(50, ROOM_1_1, ROOM_3_1);
+    mapDrive(50, ROOM_3_1, ROOM_1_1);
+  }
+    scanRoom1();
 
   
   // delay(500);
@@ -518,13 +521,13 @@ void gyroUSDrive(int speed)
     }
   }
 
-  if(currFace == FORWARD || currFace == LEFT)
+  if(currFace == FORWARD || currFace == RIGHT)
   {
-    negativeFace = 1;
+    negativeFace = negativeFace * 1;
   }
   else
   {
-    negativeFace = -1;
+    negativeFace = negativeFace * -1;
   }
   
   while (!checkHole(US_LL, flagUS_LL) && !checkHole(US_RR, flagUS_RR) && (readUS(US_FR) > minDist) && (readUS(US_FL) > minDist))
@@ -982,13 +985,11 @@ void checkRoom1()
   {
     originalMap[8][2] = '0';
     originalMap[7][5] = '1';
-    digitalWrite(M_FAN, LOW);
   }
   else
   {
     originalMap[2][8] = '1';
     originalMap[5][7] = '0';
-    digitalWrite(M_FAN, HIGH);
   }
   clearPath();
 }
@@ -1016,30 +1017,48 @@ void scanRoom3()
 {
   faceCycle(FORWARD);
   align(FORWARD);
-  delay(50);
-  gyroTurn(90, 50);
   delay(300);
-  while((readUS(US_FR) + readUS(US_FL)) / 2.0 > 40)
+  while((readUS(US_RR) + readUS(US_RL)) / 2.0 > 60)
   {
-    drive(50, FORWARD);
+    drive(50, RIGHT);
   }
   stopRobot();
   delay(100);
-  align(FORWARD);
-  delay(100);
-  gyroTurn(45, 50);
+  gyroTurn(135, 50);
   delay(3000);  //scan candle
-  gyroTurn(-90, 50);
+  gyroTurn(225, 50);
   delay(100);
   align(FORWARD);
-  delay(300);
-  while(readUS(US_RL) < 70)
+  delay(100);
+  while(readUS(US_RL) < 68)
   {
     drive(50, LEFT);
   }
   stopRobot();
   delay(300);
   align(FORWARD);
+}
+
+void scanRoom1()
+{
+  faceCycle(FORWARD);
+  delay(50);
+  if(originalMap[2][8] == '1' && originalMap[5][7] == '0')
+  {
+    faceCycle(RIGHT);
+    gyroUSDrive(50);
+    faceCycle(FORWARD);
+    delay(100);
+    align(FORWARD);
+    delay(50);
+    gyroTurn(180, 50);
+    delay(3000);
+    gyroTurn(180, 50);
+  }
+  else
+  {
+    delay(3000);
+  }
 }
 
 // void wallDrive(int speed, int dir, int face, bool both)
