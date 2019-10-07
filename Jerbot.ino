@@ -131,6 +131,7 @@ void motorControl(int motor, int speed, int dir);
 bool isRoom4_1Checked = false;
 bool isRoom1_1Checked = false;
 bool isRoom1_1Updated = false;
+bool isRoom1_1Default = true;
 
 // ***** Variables ****** //
 unsigned long timer = 0;
@@ -169,35 +170,32 @@ void setup()
 void loop() 
 {
   mapDrive(50, HOME_1, ROOM_1_1);
+  align(BACKWARD);
   checkRoom1();
-  if(originalMap[2][8] == '1' && originalMap[5][7] == '0')
+  if(isRoom1_1Default)
   {
-    mapDrive(50, ROOM_1_1, ROOM_3_1);
-    mapDrive(50, ROOM_3_1, ROOM_1_1);
-  }
     scanRoom1();
-
-  
-  // delay(500);
-  // mapDrive(50, HOME_1, ROOM_1_1);
-  // delay(100);
-  // align(LEFT);
-  // delay(100);
-  //checkRoom1();
-  // mapDrive(50, ROOM_1_1, ROOM_1_1);
-
-  // delay(500);
-  // faceCycle(RIGHT);
-  // gyroUSDrive(50);
-
-  // mapDrive(50, HOME_1, ROOM_2_1);
-  // align(FORWARD);
-  // delay(200);
-  // mapDrive(50, ROOM_2_1, ROOM_3_1);
-  // align(FORWARD);
-  // delay(200);
-  // mapDrive(50, ROOM_3_1, HOME_1);
-   delay(1000000);
+  }
+  mapDrive(50, ROOM_1_1, ROOM_2_1);
+  scanRoom2();
+  align(FORWARD);
+  mapDrive(50, ROOM_2_1, ROOM_3_1);
+  checkRoom4();
+  scanRoom3();
+  align(FORWARD);
+  mapDrive(50, ROOM_3_1, ROOM_4_1);
+  scanRoom4();
+  if(!isRoom1_1Default)
+  {
+    mapDrive(50, ROOM_4_1, ROOM_1_1);
+    scanRoom1();
+    mapDrive(50, ROOM_1_1, HOME_1);
+  }
+  else
+  {
+    mapDrive(50, ROOM_4_1, HOME_1);
+  }
+  delay(1000000);
 }
 
 
@@ -412,7 +410,7 @@ int readIR(int ir)
 void align(int face)
 {
   double p = 7;
-  int err = 0;
+  int err = 0; 
   int left_us = 0; 
   int right_us = 0;
   int turnDir = FORWARD;
@@ -521,7 +519,7 @@ void gyroUSDrive(int speed)
     }
   }
 
-  if(currFace == FORWARD || currFace == RIGHT)
+  if(currFace == FORWARD || currFace == RIGHT || currFace == LEFT)
   {
     negativeFace = negativeFace * 1;
   }
@@ -547,7 +545,7 @@ void gyroUSDrive(int speed)
     }
     else
     {
-      yawFix = negativeFace * negativeUS * (((readUS(currRYawUS) - readUS(currLYawUS)) * pYaw > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : (readUS(currRYawUS) - readUS(currLYawUS)) * pYaw));
+      yawFix = negativeUS * (((readUS(currRYawUS) - readUS(currLYawUS)) * pYaw > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : (readUS(currRYawUS) - readUS(currLYawUS)) * pYaw));
       usFix = negativeUS * (((readUS(currDistUS) - wallDist) * pUS) > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : ((readUS(currDistUS) - wallDist) * pUS));
   
       motorControl(M_FR, speed - usFix, BACKWARD);
@@ -949,11 +947,27 @@ void mapDrive(int speed, int x1, int y1, int x2, int y2)
   minimizePath();
   translateDrive(speed);
   clearPath();
+  if (checkIfRoom(x2, y2, ROOM_3_1))
+  {
+    if(readUS(US_RR) < 20)
+    {
+      faceCycle(FORWARD);
+      gyroUSDrive(50);
+      delay(100);
+    }
+    align(FORWARD);
+  }
 }
 
 bool checkIfRoom(int x1, int y1, int x2, int y2)
 {
   return x1 == x2 && y1 == y2;
+}
+
+//uv isnt working
+bool readUV()
+{
+  return !digitalRead(UV);
 }
 
 void checkRoom4()
@@ -983,8 +997,9 @@ void checkRoom1()
   faceCycle(FORWARD);
   if(readUS(US_LL) > 15 && readUS(US_LR) > 15)
   {
-    originalMap[8][2] = '0';
-    originalMap[7][5] = '1';
+    originalMap[2][8] = '0';
+    originalMap[5][7] = '1';
+    isRoom1_1Default = false;
   }
   else
   {
@@ -994,10 +1009,27 @@ void checkRoom1()
   clearPath();
 }
 
-//uv isnt working
-bool readUV()
+
+void scanRoom1()
 {
-  return !digitalRead(UV);
+  faceCycle(FORWARD);
+  delay(50);
+  if(originalMap[2][8] == '1' && originalMap[5][7] == '0')
+  {
+    faceCycle(RIGHT);
+    gyroUSDrive(50);
+    faceCycle(FORWARD);
+    delay(100);
+    align(FORWARD);
+    delay(50);
+    gyroTurn(180, 50);
+    delay(3000);
+    gyroTurn(180, 50);
+  }
+  else
+  {
+    delay(3000);
+  }
 }
 
 void scanRoom2()
@@ -1039,27 +1071,55 @@ void scanRoom3()
   align(FORWARD);
 }
 
-void scanRoom1()
+void scanRoom4()
 {
+  bool isDefault = originalMap[8][6] == '0';
   faceCycle(FORWARD);
   delay(50);
-  if(originalMap[2][8] == '1' && originalMap[5][7] == '0')
+  if(isDefault)
   {
-    faceCycle(RIGHT);
-    gyroUSDrive(50);
-    faceCycle(FORWARD);
-    delay(100);
+    while((readUS(US_FR) + readUS(US_FL)) / 2.0 < 52)
+    {
+      drive(50, BACKWARD);
+    }
+  }
+  align(FORWARD);
+  delay(300);
+  while((readUS(US_LR) + readUS(US_LL)) / 2.0 > 110)
+  {
+    drive(50, LEFT);
+  }
+  stopRobot();
+  delay(100);
+  gyroTurn(isDefault ? -5 : 225, 50);
+  delay(3000);  //scan candle
+  gyroTurn(isDefault ? 45 : 135, 50);
+  delay(100);
+  if(!isDefault)
+  {
     align(FORWARD);
-    delay(50);
-    gyroTurn(180, 50);
-    delay(3000);
-    gyroTurn(180, 50);
+    delay(100);
+  }
+  while(readUS(US_LL) < 115 && readUS(US_RR) > 10)
+  {
+    drive(50, RIGHT);
+  }
+  stopRobot();
+  delay(300);
+  if(isDefault)
+  {
+    align(RIGHT);
   }
   else
   {
-    delay(3000);
+    align(FORWARD);
   }
 }
+  
+
+
+
+
 
 // void wallDrive(int speed, int dir, int face, bool both)
 // {
