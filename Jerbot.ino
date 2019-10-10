@@ -31,7 +31,7 @@
 #define PATH_SIZE 50
 
 #define HOME_1 5, 1
-#define ROOM_1_1 originalMap[2][8] == '0' ? 8 : 7, originalMap[2][8] == '0' ? 1 : 6
+#define ROOM_1_1 originalMap[2][8] == '0' ? 8 : 5, originalMap[2][8] == '0' ? 1 : 8
 #define ROOM_2_1 1, 6
 #define ROOM_3_1 5, 11
 #define ROOM_4_1 5, originalMap[8][6] == '1' ? 11 : 8
@@ -185,6 +185,7 @@ void loop()
   align(FORWARD);
   mapDrive(50, ROOM_3_1, ROOM_4_1);
   scanRoom4();
+  isRoom1_1Default = false;
   if(!isRoom1_1Default)
   {
     mapDrive(50, ROOM_4_1, ROOM_1_1);
@@ -473,8 +474,6 @@ void align(int face)
 }
 
 
-
-
 void gyroUSDrive(int speed)
 {
   double pYaw = 4, pUS = 3; // The fix of the driving, p_gyro for gyro, p_us for ultrasonic.
@@ -545,7 +544,7 @@ void gyroUSDrive(int speed)
     }
     else
     {
-      yawFix = negativeUS * (((readUS(currRYawUS) - readUS(currLYawUS)) * pYaw > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : (readUS(currRYawUS) - readUS(currLYawUS)) * pYaw));
+      yawFix = (((readUS(currRYawUS) - readUS(currLYawUS)) * pYaw > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : (readUS(currRYawUS) - readUS(currLYawUS)) * pYaw));
       usFix = negativeUS * (((readUS(currDistUS) - wallDist) * pUS) > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : ((readUS(currDistUS) - wallDist) * pUS));
   
       motorControl(M_FR, speed - usFix, BACKWARD);
@@ -999,12 +998,13 @@ void checkRoom1()
   {
     originalMap[2][8] = '0';
     originalMap[5][7] = '1';
-    isRoom1_1Default = false;
+    isRoom1_1Default = true;
   }
   else
   {
     originalMap[2][8] = '1';
     originalMap[5][7] = '0';
+    isRoom1_1Default = false;
   }
   clearPath();
 }
@@ -1016,15 +1016,32 @@ void scanRoom1()
   delay(50);
   if(originalMap[2][8] == '1' && originalMap[5][7] == '0')
   {
-    faceCycle(RIGHT);
-    gyroUSDrive(50);
-    faceCycle(FORWARD);
+    while(readUS(US_RL) < 30)
+    {
+      drive(50, BACKWARD);
+    }
+    stopRobot();
+    delay(100);
+    while(readUS(US_BL) > 50)
+    {
+      drive(50, LEFT);
+    }
+    stopRobot();
     delay(100);
     align(FORWARD);
     delay(50);
     gyroTurn(180, 50);
     delay(3000);
     gyroTurn(180, 50);
+    delay(50);
+    align(FORWARD);
+    delay(100);
+    while(readUS(US_FL) < 30)
+    {
+      drive(50, RIGHT);
+    }
+    delay(50);
+    stopRobot();
   }
   else
   {
@@ -1050,7 +1067,13 @@ void scanRoom3()
   faceCycle(FORWARD);
   align(FORWARD);
   delay(300);
-  while((readUS(US_RR) + readUS(US_RL)) / 2.0 > 60)
+  while((readUS(US_FR) + readUS(US_FL)) / 2.0 > 15)
+  {
+    drive(50, FORWARD);
+  }
+  stopRobot();
+  delay(100);
+  while((readUS(US_RR) + readUS(US_RL)) / 2.0 > 50)
   {
     drive(50, RIGHT);
   }
@@ -1109,11 +1132,14 @@ void scanRoom4()
   if(isDefault)
   {
     align(RIGHT);
+    delay(100);
+    align(RIGHT);
   }
   else
   {
     align(FORWARD);
   }
+  delay(200);
 }
   
 
