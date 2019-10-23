@@ -169,33 +169,32 @@ void setup()
 
 void loop() 
 {
-  mapDrive(50, HOME_1, ROOM_1_1);
-  align(BACKWARD);
-  checkRoom1();
-  if(isRoom1_1Default)
-  {
-    scanRoom1();
-  }
-  mapDrive(50, ROOM_1_1, ROOM_2_1);
-  scanRoom2();
-  align(FORWARD);
-  mapDrive(50, ROOM_2_1, ROOM_3_1);
+  // mapDrive(50, HOME_1, ROOM_1_1);
+  // align(BACKWARD);
+  // checkRoom1();
+  // if(isRoom1_1Default)
+  // {
+  //   scanRoom1();
+  // }
+  // mapDrive(50, ROOM_1_1, ROOM_2_1);
+  // scanRoom2();
+  // align(FORWARD);
+  // mapDrive(50, ROOM_2_1, ROOM_3_1);
   checkRoom4();
   scanRoom3();
   align(FORWARD);
   mapDrive(50, ROOM_3_1, ROOM_4_1);
   scanRoom4();
-  isRoom1_1Default = false;
-  if(!isRoom1_1Default)
-  {
-    mapDrive(50, ROOM_4_1, ROOM_1_1);
-    scanRoom1();
-    mapDrive(50, ROOM_1_1, HOME_1);
-  }
-  else
-  {
-    mapDrive(50, ROOM_4_1, HOME_1);
-  }
+  // if(!isRoom1_1Default)
+  // {
+  //   mapDrive(50, ROOM_4_1, ROOM_1_1);
+  //   scanRoom1();
+  //   mapDrive(50, ROOM_1_1, HOME_1);
+  // }
+  // else
+  // {
+  //   mapDrive(50, ROOM_4_1, HOME_1);
+  // }
   delay(1000000);
 }
 
@@ -994,7 +993,7 @@ void checkRoom1()
 {
   isRoom1_1Checked = true;
   faceCycle(FORWARD);
-  if(readUS(US_LL) > 15 && readUS(US_LR) > 15)
+  if(readUS(US_LL) > 20 && readUS(US_LR) > 20)
   {
     originalMap[2][8] = '0';
     originalMap[5][7] = '1';
@@ -1016,13 +1015,14 @@ void scanRoom1()
   delay(50);
   if(originalMap[2][8] == '1' && originalMap[5][7] == '0')
   {
-    while(readUS(US_RL) < 30)
+    while(readUS(US_RR) < 30)
     {
       drive(50, BACKWARD);
     }
+    delay(80);
     stopRobot();
     delay(100);
-    while(readUS(US_BL) > 50)
+    while(readUS(US_BL) > 60)
     {
       drive(50, LEFT);
     }
@@ -1035,12 +1035,14 @@ void scanRoom1()
     gyroTurn(180, 50);
     delay(50);
     align(FORWARD);
+    delay(50);
+    align(FORWARD);
     delay(100);
     while(readUS(US_FL) < 30)
     {
       drive(50, RIGHT);
     }
-    delay(50);
+    delay(80);
     stopRobot();
   }
   else
@@ -1085,6 +1087,12 @@ void scanRoom3()
   delay(100);
   align(FORWARD);
   delay(100);
+  while((readUS(US_FR) + readUS(US_FL)) / 2.0 > 12)
+  {
+    drive(50, FORWARD);
+  }
+  stopRobot();
+  delay(100);
   while(readUS(US_RL) < 68)
   {
     drive(50, LEFT);
@@ -1105,6 +1113,8 @@ void scanRoom4()
     {
       drive(50, BACKWARD);
     }
+    stopRobot();
+    delay(50);
   }
   align(FORWARD);
   delay(300);
@@ -1121,8 +1131,12 @@ void scanRoom4()
   if(!isDefault)
   {
     align(FORWARD);
-    delay(100);
   }
+  else
+  {
+    align(RIGHT);
+  }
+  delay(100);
   while(readUS(US_LL) < 115 && readUS(US_RR) > 10)
   {
     drive(50, RIGHT);
@@ -1132,6 +1146,12 @@ void scanRoom4()
   if(isDefault)
   {
     align(RIGHT);
+    delay(50);
+    while((readUS(US_RR) + readUS(US_RL)) / 2.0 > 15)
+    {
+      drive(50, RIGHT);
+    }
+    stopRobot();
     delay(100);
     align(RIGHT);
   }
