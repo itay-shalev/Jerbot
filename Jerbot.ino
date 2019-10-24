@@ -165,36 +165,36 @@ void setup()
   Serial.begin(9600);
   mpu.begin();
   mpu.calibrateGyro();
-  }
+}
 
 void loop() 
 {
-  // mapDrive(50, HOME_1, ROOM_1_1);
-  // align(BACKWARD);
-  // checkRoom1();
-  // if(isRoom1_1Default)
-  // {
-  //   scanRoom1();
-  // }
-  // mapDrive(50, ROOM_1_1, ROOM_2_1);
-  // scanRoom2();
-  // align(FORWARD);
-  // mapDrive(50, ROOM_2_1, ROOM_3_1);
+  mapDrive(50, HOME_1, ROOM_1_1);
+  align(BACKWARD);
+  checkRoom1();
+  if(isRoom1_1Default)
+  {
+    scanRoom1();
+  }
+  mapDrive(50, ROOM_1_1, ROOM_2_1);
+  scanRoom2();
+  align(FORWARD);
+  mapDrive(50, ROOM_2_1, ROOM_3_1);
   checkRoom4();
   scanRoom3();
   align(FORWARD);
   mapDrive(50, ROOM_3_1, ROOM_4_1);
   scanRoom4();
-  // if(!isRoom1_1Default)
-  // {
-  //   mapDrive(50, ROOM_4_1, ROOM_1_1);
-  //   scanRoom1();
-  //   mapDrive(50, ROOM_1_1, HOME_1);
-  // }
-  // else
-  // {
-  //   mapDrive(50, ROOM_4_1, HOME_1);
-  // }
+  if(!isRoom1_1Default)
+  {
+    mapDrive(50, ROOM_4_1, ROOM_1_1);
+    scanRoom1();
+    mapDrive(50, ROOM_1_1, HOME_1);
+  }
+  else
+  {
+    mapDrive(50, ROOM_4_1, HOME_1);
+  }
   delay(1000000);
 }
 
@@ -269,7 +269,7 @@ double getYaw()
   
   yaw += norm.ZAxis * timeStep;
   delay(timeStep * 1000 - (millis() - timer));
-  return yaw;
+  return (int)yaw % 180;
 }
 
 
@@ -295,16 +295,17 @@ void turn(int speed, int dir)
 void gyroTurn(int angle, int speed)
 {
   yaw = 0; //Resets the yaw of the robot.
-  angle = angle - (speed / 2); //A fix for the degrees based on the offset caused by the speed.
-  if (angle > 0)
+  // angle - (speed / 2); //A fix for the degrees based on the offset caused by the speed.
+  int newAngle = angle / 2;
+  if (newAngle > 0)
   {
     turn(speed, RIGHT);
   }
-  else if (angle < 0)
+  else if (newAngle < 0)
   {
     turn(speed, LEFT);
   }
-  while (abs(yaw) <= abs(angle) + 3 || abs(yaw) <= abs(angle) - 3)
+  while (abs(yaw) <= abs(newAngle) + 3 || abs(yaw) <= abs(newAngle) - 3)
   {
     yaw = getYaw();
   }
@@ -1083,7 +1084,7 @@ void scanRoom3()
   delay(100);
   gyroTurn(135, 50);
   delay(3000);  //scan candle
-  gyroTurn(225, 50);
+  gyroTurn(-135, 50);
   delay(100);
   align(FORWARD);
   delay(100);
@@ -1118,26 +1119,38 @@ void scanRoom4()
   }
   align(FORWARD);
   delay(300);
-  while((readUS(US_LR) + readUS(US_LL)) / 2.0 > 110)
+  if(isDefault)
   {
-    drive(50, LEFT);
+    while(readUS(US_BR) > 30)
+    {
+      drive(50, LEFT);
+    }
+    stopRobot();
   }
-  stopRobot();
+  else
+  {
+    while((readUS(US_LR) + readUS(US_LL)) / 2.0 > 110)
+    {
+      drive(50, LEFT);
+    }
+    stopRobot();
+  }
   delay(100);
-  gyroTurn(isDefault ? -5 : 225, 50);
+  if(isDefault)
+  {
+    align(RIGHT);
+    delay(150);
+  }
+  gyroTurn(isDefault ? -15 : 225, 50);
   delay(3000);  //scan candle
-  gyroTurn(isDefault ? 45 : 135, 50);
+  gyroTurn(isDefault ? 25 : 135, 50);
   delay(100);
   if(!isDefault)
   {
     align(FORWARD);
   }
-  else
-  {
-    align(RIGHT);
-  }
   delay(100);
-  while(readUS(US_LL) < 115 && readUS(US_RR) > 10)
+  while(readUS(US_LL) < 115 && readUS(US_RR) > 25)
   {
     drive(50, RIGHT);
   }
@@ -1145,8 +1158,6 @@ void scanRoom4()
   delay(300);
   if(isDefault)
   {
-    align(RIGHT);
-    delay(50);
     while((readUS(US_RR) + readUS(US_RL)) / 2.0 > 15)
     {
       drive(50, RIGHT);
