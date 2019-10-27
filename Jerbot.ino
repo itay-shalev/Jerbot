@@ -132,6 +132,7 @@ bool isRoom4_1Checked = false;
 bool isRoom1_1Checked = false;
 bool isRoom1_1Updated = false;
 bool isRoom1_1Default = true;
+bool isDog = false;
 
 // ***** Variables ****** //
 unsigned long timer = 0;
@@ -169,14 +170,23 @@ void setup()
 
 void loop() 
 {
-  mapDrive(50, HOME_1, ROOM_1_1);
-  align(BACKWARD);
-  checkRoom1();
-  if(isRoom1_1Default)
+  startAlign();
+  checkDog();
+  if(!isDog)
   {
-    scanRoom1();
+    mapDrive(50, HOME_1, ROOM_1_1);
+    align(BACKWARD);
+    checkRoom1();
+    if(isRoom1_1Default)
+    {
+      scanRoom1();
+    }
+    mapDrive(50, ROOM_1_1, ROOM_2_1);
   }
-  mapDrive(50, ROOM_1_1, ROOM_2_1);
+  else
+  {
+    mapDrive(50, HOME_1, ROOM_2_1);
+  }
   scanRoom2();
   align(FORWARD);
   mapDrive(50, ROOM_2_1, ROOM_3_1);
@@ -296,7 +306,7 @@ void gyroTurn(int angle, int speed)
 {
   yaw = 0; //Resets the yaw of the robot.
   // angle - (speed / 2); //A fix for the degrees based on the offset caused by the speed.
-  int newAngle = angle / 2;
+  int newAngle = angle > 0 ? angle / 2 + 20 : angle / 2 - 20;
   if (newAngle > 0)
   {
     turn(speed, RIGHT);
@@ -1171,6 +1181,34 @@ void scanRoom4()
     align(FORWARD);
   }
   delay(200);
+}
+
+void startAlign()
+{
+  if((readUS(US_RL) + readUS(US_RR)) / 2.0 > 40)
+  {
+    gyroTurn(80, 50);
+    delay(10);
+    align(RIGHT);
+    delay(100);
+  }
+}
+
+void checkDog()
+{
+  if((readIR(IR_LL) + readIR(IR_LR)) / 2.0 < 100)
+  {
+    isDog = false;
+  }
+  else
+  {
+    isDog = true;
+    originalMap[2][8] = '1';
+    originalMap[5][7] = '0';
+    isRoom1_1Default = false;
+    isRoom1_1Checked = true;
+    isRoom1_1Updated = true;
+  }
 }
   
 
