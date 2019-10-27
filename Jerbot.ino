@@ -23,7 +23,7 @@
 #define O_US_LL 38
 #define O_US_LR 36
 #define O_US_BR 40
-#define UV 35
+#define UV 33
 
 #define SPEED_LIMIT(x) (80 - x)
 #define X 12
@@ -509,7 +509,6 @@ void gyroUSDrive(int speed)
       currDistUS = US_RL;
       currLYawUS = US_RL;
       currRYawUS = US_RR;
-      digitalWrite(M_FAN, HIGH);
       negativeUS = 1;
       foundWall = true;
     }
@@ -518,7 +517,6 @@ void gyroUSDrive(int speed)
       currDistUS = US_LR;
       currLYawUS = US_LL;
       currRYawUS = US_LR;
-      digitalWrite(M_FAN, LOW);
       negativeUS = -1;
       foundWall = true;
     }
@@ -973,7 +971,6 @@ bool checkIfRoom(int x1, int y1, int x2, int y2)
   return x1 == x2 && y1 == y2;
 }
 
-//uv isnt working
 bool readUV()
 {
   return !digitalRead(UV);
@@ -1058,7 +1055,31 @@ void scanRoom1()
   }
   else
   {
-    delay(3000);
+    if (readUV())
+    {
+      align(BACKWARD);
+      delay(10);
+      while(readUS(US_BR) < 48)
+      {
+        drive(50, FORWARD);
+      }
+      stopRobot();
+      delay(50);
+      digitalWrite(M_FAN, HIGH);
+      while(readUV())
+      {
+        delay(0.5);
+      }
+      digitalWrite(M_FAN, LOW);
+      while(readUS(US_BR) > 15)
+      {
+        drive(50, BACKWARD);
+      }
+      stopRobot();
+      delay(50);
+      mapDrive(50, ROOM_1_1, HOME_1);
+      stopProgram();
+    }
   }
 }
 
@@ -1068,7 +1089,29 @@ void scanRoom2()
   align(FORWARD);
   delay(100);
   gyroTurn(180, 50);
-  delay(3000);  //scan candle
+  if(readUV())
+  {
+    while(readUS(US_BR) < 48)
+    {
+      drive(50, FORWARD);
+    }
+    stopRobot();
+    delay(50);
+    digitalWrite(M_FAN, HIGH);
+    while(readUV())
+    {
+      delay(0.5);
+    }
+    digitalWrite(M_FAN, LOW);
+    while(readUS(US_BR) > 15)
+    {
+      drive(50, BACKWARD);
+    }
+    stopRobot();
+    delay(50);
+    mapDrive(50, ROOM_2_1, HOME_1);
+    stopProgram();
+  }
   gyroTurn(180, 50);
   delay(100);
   align(FORWARD);
@@ -1209,6 +1252,11 @@ void checkDog()
     isRoom1_1Checked = true;
     isRoom1_1Updated = true;
   }
+}
+
+void stopProgram()
+{
+  delay(100000000000);
 }
   
 
