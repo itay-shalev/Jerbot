@@ -1089,9 +1089,10 @@ void scanRoom2()
   align(FORWARD);
   delay(100);
   gyroTurn(180, 50);
+  delay(100);
   if(readUV())
   {
-    while(readUS(US_BR) < 48)
+    while((readUS(US_BR)+readUS(US_BL)) / 2 < 48)
     {
       drive(50, FORWARD);
     }
@@ -1109,6 +1110,7 @@ void scanRoom2()
     }
     stopRobot();
     delay(50);
+    gyroTurn(180, 50);
     mapDrive(50, ROOM_2_1, HOME_1);
     stopProgram();
   }
@@ -1123,7 +1125,7 @@ void scanRoom3()
   faceCycle(FORWARD);
   align(FORWARD);
   delay(300);
-  while((readUS(US_FR) + readUS(US_FL)) / 2.0 > 15)
+  while((readUS(US_FR) + readUS(US_FL)) / 2.0 > 18)
   {
     drive(50, FORWARD);
   }
@@ -1136,7 +1138,44 @@ void scanRoom3()
   stopRobot();
   delay(100);
   gyroTurn(135, 50);
-  delay(3000);  //scan candle
+  delay(100);
+  if(readUV())
+  {
+    stopRobot();
+    digitalWrite(M_FAN, HIGH);
+    while(readUV())
+    {
+      delay(0.5);
+    }
+    digitalWrite(M_FAN, LOW);
+    stopRobot();
+    delay(50);
+    while(readUS(US_BR) > 15)
+    {
+      drive(50, BACKWARD);
+    }
+    stopRobot();
+    delay(50);
+    gyroTurn(-135, 50);
+    delay(100);
+    align(FORWARD);
+    delay(100);
+    while((readUS(US_FR) + readUS(US_FL)) / 2.0 > 12)
+    {
+     drive(50, FORWARD);
+    }
+    stopRobot();
+    delay(100);
+    while((readUS(US_RL)+readUS(US_RR)) / 2 < 68)
+  {
+    drive(50, LEFT);
+  }
+  stopRobot();
+  delay(300);
+  align(FORWARD);
+    mapDrive(50, ROOM_3_1, HOME_1);
+    stopProgram();
+  }  
   gyroTurn(-135, 50);
   delay(100);
   align(FORWARD);
@@ -1195,7 +1234,54 @@ void scanRoom4()
     delay(150);
   }
   gyroTurn(isDefault ? -15 : 225, 50);
-  delay(3000);  //scan candle
+  faceCycle(FORWARD);
+    delay(50);
+    drive(50,FORWARD);
+    delay(1000);
+    stopRobot();
+  if(readUV())
+  {
+    stopRobot();
+    delay(50);
+    digitalWrite(M_FAN, HIGH);
+    while(readUV())
+    {
+      delay(0.5);
+    }
+    digitalWrite(M_FAN, LOW);
+    stopRobot();
+    delay(50);
+    gyroTurn(isDefault ? 25 : 135, 50);
+  delay(100);
+  if(!isDefault)
+  {
+    align(FORWARD);
+  }
+  delay(100);
+  while(readUS(US_LL) < 115 && readUS(US_RR) > 25)
+  {
+    drive(50, RIGHT);
+  }
+  stopRobot();
+  delay(300);
+  if(isDefault)
+  {
+    while((readUS(US_RR) + readUS(US_RL)) / 2.0 > 15)
+    {
+      drive(50, RIGHT);
+    }
+    stopRobot();
+    delay(100);
+    align(RIGHT);
+  }
+  else
+  {
+    align(FORWARD);
+  }
+  delay(200);
+    mapDrive(50, ROOM_4_1, HOME_1);
+    stopProgram();
+  }    //scan candle
   gyroTurn(isDefault ? 25 : 135, 50);
   delay(100);
   if(!isDefault)
