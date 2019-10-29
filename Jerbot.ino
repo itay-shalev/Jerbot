@@ -168,7 +168,7 @@ void setup()
   mpu.calibrateGyro();
 }
 
-void loop() 
+void loop()
 {
   startAlign();
   checkDog();
@@ -1198,6 +1198,7 @@ void scanRoom3()
 void scanRoom4()
 {
   bool isDefault = originalMap[8][6] == '0';
+  bool isCandle = false;
   faceCycle(FORWARD);
   delay(50);
   if(isDefault)
@@ -1213,7 +1214,7 @@ void scanRoom4()
   delay(300);
   if(isDefault)
   {
-    while(readUS(US_BR) > 30)
+    while((readUS(US_BR) + readUS(US_BL)) / 2 > 30)
     {
       drive(50, LEFT);
     }
@@ -1221,10 +1222,11 @@ void scanRoom4()
   }
   else
   {
-    while((readUS(US_LR) + readUS(US_LL)) / 2.0 > 110)
+    while(readUS(US_BL) > 80)
     {
       drive(50, LEFT);
     }
+    delay(200);
     stopRobot();
   }
   delay(100);
@@ -1234,14 +1236,10 @@ void scanRoom4()
     delay(150);
   }
   gyroTurn(isDefault ? -15 : 225, 50);
-  faceCycle(FORWARD);
-    delay(50);
-    drive(50,FORWARD);
-    delay(1000);
-    stopRobot();
+  delay(300);
   if(readUV())
   {
-    stopRobot();
+    isCandle = true;
     delay(50);
     digitalWrite(M_FAN, HIGH);
     while(readUV())
@@ -1249,39 +1247,8 @@ void scanRoom4()
       delay(0.5);
     }
     digitalWrite(M_FAN, LOW);
-    stopRobot();
-    delay(50);
-    gyroTurn(isDefault ? 25 : 135, 50);
-  delay(100);
-  if(!isDefault)
-  {
-    align(FORWARD);
-  }
-  delay(100);
-  while(readUS(US_LL) < 115 && readUS(US_RR) > 25)
-  {
-    drive(50, RIGHT);
-  }
-  stopRobot();
-  delay(300);
-  if(isDefault)
-  {
-    while((readUS(US_RR) + readUS(US_RL)) / 2.0 > 15)
-    {
-      drive(50, RIGHT);
-    }
-    stopRobot();
     delay(100);
-    align(RIGHT);
   }
-  else
-  {
-    align(FORWARD);
-  }
-  delay(200);
-    mapDrive(50, ROOM_4_1, HOME_1);
-    stopProgram();
-  }    //scan candle
   gyroTurn(isDefault ? 25 : 135, 50);
   delay(100);
   if(!isDefault)
@@ -1289,7 +1256,7 @@ void scanRoom4()
     align(FORWARD);
   }
   delay(100);
-  while(readUS(US_LL) < 115 && readUS(US_RR) > 25)
+  while(readUS(US_BR) < 110 && readUS(US_RR) > 25)
   {
     drive(50, RIGHT);
   }
@@ -1310,6 +1277,11 @@ void scanRoom4()
     align(FORWARD);
   }
   delay(200);
+  if (isCandle)
+  {
+    mapDrive(50, ROOM_4_1, HOME_1);
+    stopProgram();
+  }
 }
 
 void startAlign()
