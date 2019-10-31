@@ -136,7 +136,7 @@ bool isDog = false;
 
 // ***** Variables ****** //
 unsigned long timer = 0;
-double yaw = 0;
+int yaw = 0;
 float timeStep = 0.01;
 int facingDeg = 0;
 int swapDir = 1; // For the gyro, if driving right or backward the gyro fix should be minus (multiplied by -1 or 1).
@@ -279,7 +279,7 @@ double getYaw()
   
   yaw += norm.ZAxis * timeStep;
   delay(timeStep * 1000 - (millis() - timer));
-  return (int)yaw % 180;
+  return yaw;
 }
 
 
@@ -306,7 +306,7 @@ void gyroTurn(int angle, int speed)
 {
   yaw = 0; //Resets the yaw of the robot.
   // angle - (speed / 2); //A fix for the degrees based on the offset caused by the speed.
-  int newAngle = angle > 0 ? angle / 2 + 20 : angle / 2 - 20;
+  int newAngle = angle > 0 ? angle / 2 + 20: angle / 2 - 20;
   if (newAngle > 0)
   {
     turn(speed, RIGHT);
@@ -315,7 +315,7 @@ void gyroTurn(int angle, int speed)
   {
     turn(speed, LEFT);
   }
-  while (abs(yaw) <= abs(newAngle) + 3 || abs(yaw) <= abs(newAngle) - 3)
+  while (abs(abs(newAngle) - abs(yaw)) >= 3)
   {
     yaw = getYaw();
   }
@@ -1131,10 +1131,11 @@ void scanRoom3()
   }
   stopRobot();
   delay(100);
-  while((readUS(US_RR) + readUS(US_RL)) / 2.0 > 50)
+  while(readUS(US_BR) > 80)
   {
     drive(50, RIGHT);
   }
+  delay(50);
   stopRobot();
   delay(100);
   gyroTurn(135, 50);
