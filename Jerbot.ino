@@ -24,6 +24,8 @@
 #define O_US_LR 36
 #define O_US_BR 40
 #define UV 33
+#define P_R 28
+#define P_L 29
 
 #define SPEED_LIMIT(x) (80 - x)
 #define X 12
@@ -146,6 +148,9 @@ MPU6050 mpu;
 
 void setup() 
 {
+  Serial.begin(9600);
+  mpu.begin();
+  mpu.calibrateGyro();
   initMotor(M_FL);
   initMotor(M_FR);
   initMotor(M_BL);
@@ -163,13 +168,12 @@ void setup()
   initUS(US_RL);
   initUS(US_FR);
   pinMode(UV, INPUT);
-  Serial.begin(9600);
-  mpu.begin();
-  mpu.calibrateGyro();
+  pyroSetup();
 }
 
 void loop()
 {
+  /*
   startAlign();
   checkDog();
   if(!isDog)
@@ -190,7 +194,6 @@ void loop()
   scanRoom2();
   align(FORWARD);
   mapDrive(50, ROOM_2_1, ROOM_3_1);
-  checkRoom4();
   scanRoom3();
   align(FORWARD);
   mapDrive(50, ROOM_3_1, ROOM_4_1);
@@ -204,9 +207,9 @@ void loop()
   else
   {
     mapDrive(50, ROOM_4_1, HOME_1);
-  }
+  }*/
+  pyroDetect();
   delay(1000000);
-
 }
 
 
@@ -449,8 +452,6 @@ void align(int face)
   err = (int)readUS(left_us) - (int)readUS(right_us);
   while (abs(err) != 0)
   {
-    Serial.print(p * abs(err)) > 100 ? 100 : (p*abs(err));
-    Serial.print("\n\n");
     if (err > 0)
     {
       turn((p * abs(err)) > 60 ? 60 : (p*abs(err)) < 20 ? 20 : (p*abs(err)), RIGHT);
@@ -460,15 +461,11 @@ void align(int face)
       turn((p * abs(err)) > 60 ? 60 : (p*abs(err)) < 20 ? 20 : (p*abs(err)), LEFT);
     }
     err = (int)readUS(left_us) - (int)readUS(right_us);
-    Serial.print(abs(err));
-    Serial.print("\n");
   }
   stopRobot();
   err = (int)readUS(left_us) - (int)readUS(right_us);
   while (abs(err) != 0)
   {
-    Serial.print(p * abs(err)) > 100 ? 100 : (p*abs(err));
-    Serial.print("\n\n");
     if (err > 0)
     {
       turn((p * abs(err)) > 60 ? 60 : (p*abs(err)) < 15 ? 15 : (p*abs(err)), RIGHT);
@@ -478,8 +475,6 @@ void align(int face)
       turn((p * abs(err)) > 60 ? 60 : (p*abs(err)) < 15 ? 15 : (p*abs(err)), LEFT);
     }
     err = (int)readUS(left_us) - (int)readUS(right_us);
-    Serial.print(abs(err));
-    Serial.print("\n");
   }
   stopRobot();
 }
@@ -1041,7 +1036,29 @@ void scanRoom1()
     align(FORWARD);
     delay(50);
     gyroTurn(180, 50);
-    delay(3000);
+    if (readUV())
+    {
+      align(BACKWARD);
+      delay(10);
+      while(readUS(US_BR) < 48)
+      {
+        drive(50, FORWARD);
+      }
+      stopRobot();
+      delay(50);
+      digitalWrite(M_FAN, HIGH);
+      while(readUV())
+      {
+        delay(0.5);
+      }
+      digitalWrite(M_FAN, LOW);
+      while(readUS(US_BR) > 15)
+      {
+        drive(50, BACKWARD);
+      }
+      stopRobot();
+      delay(50);
+    }
     gyroTurn(180, 50);
     delay(50);
     align(FORWARD);
@@ -1091,7 +1108,7 @@ void scanRoom2()
   align(FORWARD);
   delay(100);
   gyroTurn(180, 50);
-  delay(100);
+  delay(300);
   if(readUV())
   {
     while((readUS(US_BR)+readUS(US_BL)) / 2 < 48)
@@ -1133,6 +1150,7 @@ void scanRoom3()
   }
   stopRobot();
   delay(100);
+  checkRoom4();
   while(readUS(US_BR) > 80)  
   {
     drive(50, RIGHT);
@@ -1141,7 +1159,7 @@ void scanRoom3()
   stopRobot();
   delay(100);
   gyroTurn(135, 50);
-  delay(100);
+  delay(300);
   if(readUV())
   {
     stopRobot();
@@ -1155,18 +1173,6 @@ void scanRoom3()
     delay(50);
     gyroTurn(-135, 50);  //////////
     align(FORWARD);
-    
-    /*delay(50);
-    while(readUS(US_BR) > 15)
-    {
-      drive(50, BACKWARD);
-    }
-    stopRobot();
-    delay(50);
-    gyroTurn(-135, 50);
-    delay(100);
-    align(FORWARD);
-    */
     delay(100);
     while((readUS(US_FR) + readUS(US_FL)) / 2.0 > 12)
     {
@@ -1229,10 +1235,11 @@ void scanRoom4()
   delay(300);
   if(isDefault)
   {
-    while((readUS(US_BR) + readUS(US_BL)) / 2 > 30)
+    while(readUS(US_BL) > 30)
     {
       drive(50, LEFT);
     }
+    delay(200);
     stopRobot();
   }
   else
@@ -1247,12 +1254,12 @@ void scanRoom4()
   delay(100);
   if(isDefault)
   {
-    align(RIGHT);
-    delay(150);
+    delay(20);
   }
   else
   {
     align(FORWARD);
+    delay(50);
   }
   gyroTurn(isDefault ? -15 : 225, 50);
   delay(300);
@@ -1275,30 +1282,25 @@ void scanRoom4()
     align(FORWARD);
   }
   delay(100);
-  while(readUS(US_BR) < 110 && readUS(US_RR) > 25)
+  if(!isDefault)
   {
-    drive(45, RIGHT);
-  }
-  stopRobot();
-  delay(300);
-  if(isDefault)
-  {
-    while((readUS(US_RR) + readUS(US_RL)) / 2.0 > 15)
+    while(readUS(US_BR) < 110)
     {
-      drive(50, RIGHT);
+      drive(45, RIGHT);
     }
     stopRobot();
-    delay(100);
-    align(RIGHT);
-    delay(100);
-    align(RIGHT);
+    delay(300);
+    align(FORWARD);
   }
   else
   {
+    faceCycle(RIGHT);
+    gyroUSDrive(50);
+    faceCycle(FORWARD);
     delay(100);
-    align(FORWARD);
+    align(RIGHT);
   }
-  delay(200);
+  delay(300);
   if (isCandle)
   {
     mapDrive(50, ROOM_4_1, HOME_1);
@@ -1338,7 +1340,42 @@ void stopProgram()
 {
   delay(100000000000);
 }
-  
+
+void pyroSetup()
+{
+  pinMode(P_R, INPUT);
+  pinMode(P_L, INPUT);
+}
+
+int pyroRead(int pyro)
+{
+  return digitalRead(pyro);
+}
+
+void pyroDetect()
+{
+  yaw = 0;
+  while(!pyroRead(P_R) || !pyroRead(P_L))
+  {
+    yaw = getYaw();
+    if(pyroRead(P_R))
+    {
+      turn(20, RIGHT);
+    }
+    else
+    {
+      turn(20, LEFT);
+    }
+  }
+  stopRobot();
+  digitalWrite(M_FAN, HIGH);
+    while(readUV())
+    {
+      delay(0.5);
+    }
+    digitalWrite(M_FAN, LOW);
+  gyroTurn(50, -(yaw > 0 ? yaw + 5 : yaw - 5));
+}
 
 
 
