@@ -173,7 +173,8 @@ void setup()
 
 void loop()
 {
-  /*
+  
+  
   startAlign();
   checkDog();
   if(!isDog)
@@ -207,9 +208,9 @@ void loop()
   else
   {
     mapDrive(50, ROOM_4_1, HOME_1);
-  }*/
-  pyroDetect();
+  }
   delay(1000000);
+
 }
 
 
@@ -1151,7 +1152,7 @@ void scanRoom3()
   stopRobot();
   delay(100);
   checkRoom4();
-  while(readUS(US_BR) > 80)  
+  while(readUS(US_BR) > 90 || readUS(US_BL) > 90 || readUS(US_RR) > 60)  
   {
     drive(50, RIGHT);
   }
@@ -1248,7 +1249,7 @@ void scanRoom4()
     {
       drive(50, LEFT);
     }
-    delay(150);
+    delay(250);
     stopRobot();
   }
   delay(100);
@@ -1284,12 +1285,12 @@ void scanRoom4()
   delay(100);
   if(!isDefault)
   {
-    while(readUS(US_BR) < 110)
+    while(readUS(US_BR) < 90 || readUS(US_BL) < 85)
     {
       drive(45, RIGHT);
     }
     stopRobot();
-    delay(300);
+    delay(100);
     align(FORWARD);
   }
   else
@@ -1358,13 +1359,13 @@ void pyroDetect()
   while(!pyroRead(P_R) || !pyroRead(P_L))
   {
     yaw = getYaw();
-    if(pyroRead(P_R))
+    if(pyroRead(P_L))
     {
-      turn(20, RIGHT);
+      turn(20, LEFT);
     }
     else
     {
-      turn(20, LEFT);
+      turn(20, RIGHT);
     }
   }
   stopRobot();
