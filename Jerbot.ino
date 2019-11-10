@@ -173,8 +173,6 @@ void setup()
 
 void loop()
 {
-  
-  
   startAlign();
   checkDog();
   if(!isDog)
@@ -210,7 +208,6 @@ void loop()
     mapDrive(50, ROOM_4_1, HOME_1);
   }
   delay(1000000);
-
 }
 
 
@@ -1118,12 +1115,7 @@ void scanRoom2()
     }
     stopRobot();
     delay(50);
-    digitalWrite(M_FAN, HIGH);
-    while(readUV())
-    {
-      delay(0.5);
-    }
-    digitalWrite(M_FAN, LOW);
+    pyroDetect();
     while(readUS(US_BR) > 15)
     {
       drive(50, BACKWARD);
@@ -1156,7 +1148,7 @@ void scanRoom3()
   {
     drive(50, RIGHT);
   }
-  delay(100); /////////
+  delay(120); /////////
   stopRobot();
   delay(100);
   gyroTurn(135, 50);
@@ -1164,12 +1156,7 @@ void scanRoom3()
   if(readUV())
   {
     stopRobot();
-    digitalWrite(M_FAN, HIGH);
-    while(readUV())
-    {
-      delay(0.5);
-    }
-    digitalWrite(M_FAN, LOW);
+    pyroDetect();
     stopRobot();
     delay(50);
     gyroTurn(-135, 50);  //////////
@@ -1207,7 +1194,7 @@ void scanRoom3()
   {
     drive(50, LEFT);
   }
-  delay(100);
+  delay(70);
   stopRobot();
   delay(300);
   align(FORWARD);
@@ -1268,12 +1255,7 @@ void scanRoom4()
   {
     isCandle = true;
     delay(50);
-    digitalWrite(M_FAN, HIGH);
-    while(readUV())
-    {
-      delay(0.5);
-    }
-    digitalWrite(M_FAN, LOW);
+    pyroDetect();
     delay(100);
   }
   gyroTurn(isDefault ? 25 : 135, 50);
@@ -1287,11 +1269,21 @@ void scanRoom4()
   {
     while(readUS(US_BR) < 90 || readUS(US_BL) < 85)
     {
-      drive(45, RIGHT);
+      drive(40, RIGHT);
     }
     stopRobot();
     delay(100);
     align(FORWARD);
+    delay(20);
+    while(readUS(US_RL) > 30 && readUS(US_LR) > 30)
+    {
+      drive(42, BACKWARD);
+      delay(50);
+      drive(35, BACKWARD);
+      delay(10);
+    }
+    stopRobot();
+    delay(200);
   }
   else
   {
@@ -1369,13 +1361,16 @@ void pyroDetect()
     }
   }
   stopRobot();
+  delay(100);
   digitalWrite(M_FAN, HIGH);
-    while(readUV())
-    {
-      delay(0.5);
-    }
-    digitalWrite(M_FAN, LOW);
-  gyroTurn(50, -(yaw > 0 ? yaw + 5 : yaw - 5));
+  while(readUV())
+  {
+    delay(0.5);
+  }
+  digitalWrite(M_FAN, LOW);
+  delay(200);
+  yaw = yaw > 0 ? (abs(yaw) % 360) : (abs(yaw) % 360) * -1;
+  gyroTurn((yaw > 0 ? yaw + 5 : yaw - 5), 50);
 }
 
 
