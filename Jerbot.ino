@@ -114,7 +114,6 @@ const int IR_LR = A2;
 const int IR_LL = A3;
 const int IR_FR = A0;
 const int IR_FL = A1;
-
 // ***** US Connections ****** //
 int US_FL = O_US_FL;
 int US_FR = O_US_FR;
@@ -1184,11 +1183,7 @@ void scanRoom3()
   delay(100);
   align(FORWARD);
   delay(100);
-  while((readUS(US_FR) + readUS(US_FL)) / 2.0 > 10)
-  {
-    drive(50, FORWARD);
-  }
-  stopRobot();
+  wallAlign(FORWARD, 15);
   delay(100);
   while(readUS(US_BL) < 80)
   {
@@ -1219,6 +1214,7 @@ void scanRoom4()
   else
   {
     align(FORWARD);
+    wallAlign(FORWARD, 10);
   }
   delay(300);
   if(isDefault)
@@ -1263,6 +1259,7 @@ void scanRoom4()
   if(!isDefault)
   {
     align(FORWARD);
+    wallAlign(FORWARD, 15);
   }
   delay(100);
   if(!isDefault)
@@ -2125,82 +2122,82 @@ void pyroDetect()
 //     stopRobot();
 // }
 
-// void wallAlign(int face, int dist)
-// {
-//   int speed = 25;
-//   switch(face)
-//   {
-//     case FORWARD:
-//       while(dist != (int)((readUS(US_FL) + readUS(US_FR)) / 2))
-//       {
-//         if(dist + 1 > (int)((readUS(US_FL) + readUS(US_FR)) / 2))
-//         {
-//           drive(speed, BACKWARD);
-//         }
-//         else if(dist - 1 < (int)((readUS(US_FL) + readUS(US_FR)) / 2))
-//         {
-//           drive(speed, FORWARD);
-//         }
-//         else
-//         {
-//           stopRobot();
-//         }
-//       }
-//       stopRobot();
-//       break;
-//     case BACKWARD:
-//       while(dist != (int)((readUS(US_BL) + readUS(US_BR)) / 2))
-//       {
-//         if(dist + 1 > (int)((readUS(US_BL) + readUS(US_BR)) / 2))
-//         {
-//           drive(speed, FORWARD);
-//         }
-//         else if(dist - 1 < (int)((readUS(US_BL) + readUS(US_BR)) / 2))
-//         {
-//           drive(speed, BACKWARD);
-//         }
-//         else
-//         {
-//           stopRobot();
-//         }
-//       }
-//       stopRobot();
-//       break;
-//     case RIGHT:
-//       while(dist != (int)((readUS(US_RL) + readUS(US_RR)) / 2))
-//       {
-//         if(dist + 1 > (int)((readUS(US_RL) + readUS(US_RR)) / 2))
-//         {
-//           drive(speed, LEFT);
-//         }
-//         else if(dist - 1 < (int)((readUS(US_RL) + readUS(US_RR)) / 2))
-//         {
-//           drive(speed, RIGHT);
-//         }
-//         else
-//         {
-//           stopRobot();
-//         }
-//       }
-//       stopRobot();
-//       break;
-//     case LEFT:
-//       while(dist != (int)((readUS(US_LL) + readUS(US_LR)) / 2))
-//       {
-//         if(dist + 1 > (int)((readUS(US_LL) + readUS(US_LR)) / 2))
-//         {
-//           drive(speed, RIGHT);
-//         }
-//         else if(dist - 1 < (int)((readUS(US_LL) + readUS(US_LR)) / 2))
-//         {
-//           drive(speed, LEFT);
-//         }
-//         else
-//         {
-//           stopRobot();
-//         }
-//       }
-//       stopRobot();
-//       break;
-//   }
-// }
+void wallAlign(int face, int dist)
+{
+  int speed = 25;
+  switch(face)
+  {
+    case FORWARD:
+      while(dist != (int)((readUS(US_FL) + readUS(US_FR)) / 2))
+      {
+        if(dist + 1 > (int)((readUS(US_FL) + readUS(US_FR)) / 2))
+        {
+          drive(speed, BACKWARD);
+        }
+        else if(dist - 1 < (int)((readUS(US_FL) + readUS(US_FR)) / 2))
+        {
+          drive(speed, FORWARD);
+        }
+        else
+        {
+          stopRobot();
+        }
+      }
+      stopRobot();
+      break;
+    case BACKWARD:
+      while(dist != (int)((readUS(US_BL) + readUS(US_BR)) / 2))
+      {
+        if(dist + 1 > (int)((readUS(US_BL) + readUS(US_BR)) / 2))
+        {
+          drive(speed, FORWARD);
+        }
+        else if(dist - 1 < (int)((readUS(US_BL) + readUS(US_BR)) / 2))
+        {
+          drive(speed, BACKWARD);
+        }
+        else
+        {
+          stopRobot();
+        }
+      }
+      stopRobot();
+      break;
+    case RIGHT:
+      while(dist != (int)((readUS(US_RL) + readUS(US_RR)) / 2))
+      {
+        if(dist + 1 > (int)((readUS(US_RL) + readUS(US_RR)) / 2))
+        {
+          drive(speed, LEFT);
+        }
+        else if(dist - 1 < (int)((readUS(US_RL) + readUS(US_RR)) / 2))
+        {
+          drive(speed, RIGHT);
+        }
+        else
+        {
+          stopRobot();
+        }
+      }
+      stopRobot();
+      break;
+    case LEFT:
+      while(dist != (int)((readUS(US_LL) + readUS(US_LR)) / 2))
+      {
+        if(dist + 1 > (int)((readUS(US_LL) + readUS(US_LR)) / 2))
+        {
+          drive(speed, RIGHT);
+        }
+        else if(dist - 1 < (int)((readUS(US_LL) + readUS(US_LR)) / 2))
+        {
+          drive(speed, LEFT);
+        }
+        else
+        {
+          stopRobot();
+        }
+      }
+      stopRobot();
+      break;
+  }
+}
