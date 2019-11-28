@@ -204,7 +204,8 @@ void loop()
   }
   else
   {
-    mapDrive(50, HOME_1, ROOM_1_1);
+    mapDrive(50,ROOM_4_1, HOME_1);
+
   }
   delay(1000000);
 }
@@ -1056,9 +1057,7 @@ void scanRoom1()
       stopRobot();
       delay(50);
     }
-    gyroTurn(180, 50);
-    delay(50);
-    align(FORWARD);
+    gyroTurn(190, 50);
     delay(50);
     align(FORWARD);
     delay(100);
@@ -1134,66 +1133,88 @@ void scanRoom2()
 void scanRoom3()
 {
   faceCycle(FORWARD);
-  align(FORWARD);
-  delay(300);
-  while((readUS(US_FR) + readUS(US_FL)) / 2.0 > 15)
+  if (readUS(US_FR) > 15 && readUS(US_FL) > 15) //If both don't see a wall
   {
-    drive(50, FORWARD);
+    gyroUSDrive(50);
+    delay(100);
+    align(FORWARD);
   }
-  stopRobot();
+  else if ((readUS(US_FR) > 15 && readUS(US_FL) < 15) || (readUS(US_FR) < 15 && readUS(US_FL) > 15)) //Only if one of them sees a wall in front
+  {
+    align(FORWARD);
+  }
   delay(100);
-  checkRoom4();
-  while(readUS(US_BR) > 90 || readUS(US_BL) > 90 || readUS(US_RR) > 60)  
+  while (readUS(US_BL) > 80 || readUS(US_BR) > 80 || (readUS(US_RL) + readUS(US_RR)) / 2.0 > 50)
   {
     drive(50, RIGHT);
   }
-  delay(120); /////////
   stopRobot();
-  delay(100);
-  gyroTurn(135, 50);
-  delay(300);
-  if(readUV())
-  {
-    stopRobot();
-    pyroDetect();
-    stopRobot();
-    delay(50);
-    gyroTurn(-135, 50);  //////////
-    align(FORWARD);
-    delay(100);
-    while((readUS(US_FR) + readUS(US_FL)) / 2.0 > 12)
-    {
-     drive(50, FORWARD);
-    }
-    stopRobot();
-    delay(100);
-    align(FORWARD);
-    delay(50);
-    while((readUS(US_RL) + readUS(US_RR)) / 2 < 70)
-    {
-      drive(50, LEFT);
-    }
-    stopRobot();
-    delay(300);
-    align(FORWARD);
-    mapDrive(50, ROOM_3_1, HOME_1);
-    stopProgram();
-  }  
-  gyroTurn(-135, 50);
-  delay(100);
-  align(FORWARD);
-  delay(100);
-  wallAlign(FORWARD, 8);
-  delay(100);
-  while(readUS(US_BL) < 80)
-  {
-    drive(50, LEFT);
-  }
-  delay(70);
-  stopRobot();
-  delay(300);
-  align(FORWARD);
+  stopProgram();
 }
+
+// void scanRoom3()
+// {
+//   faceCycle(FORWARD);
+//   align(FORWARD);
+//   delay(300);
+//   while((readUS(US_FR) + readUS(US_FL)) / 2.0 > 13)///////
+//   {
+//     drive(50, FORWARD);
+//   }
+//   stopRobot();
+//   delay(100);
+//   checkRoom4();
+//   while(readUS(US_BR) > 90 || readUS(US_BL) > 90 || readUS(US_RR) > 60)  
+//   {
+//     drive(50, RIGHT);
+//   }
+//   delay(120); /////////
+//   stopRobot();
+//   delay(100);
+//   gyroTurn(135, 50);
+//   delay(300);
+//   if(readUV())
+//   {
+//     stopRobot();
+//     pyroDetect();
+//     stopRobot();
+//     delay(50);
+//     gyroTurn(-135, 50);  //////////
+//     align(FORWARD);
+//     delay(100);
+//     while((readUS(US_FR) + readUS(US_FL)) / 2.0 > 12)
+//     {
+//      drive(50, FORWARD);
+//     }
+//     stopRobot();
+//     delay(100);
+//     align(FORWARD);
+//     delay(50);
+//     while((readUS(US_RL) + readUS(US_RR)) / 2 < 70)
+//     {
+//       drive(50, LEFT);
+//     }
+//     stopRobot();
+//     delay(300);
+//     align(FORWARD);
+//     mapDrive(50, ROOM_3_1, HOME_1);
+//     stopProgram();
+//   }  
+//   gyroTurn(-135, 50);
+//   delay(100);
+//   align(FORWARD);
+//   delay(100);
+//   wallAlign(FORWARD, 7);
+//   delay(100);
+//   while(readUS(US_RR) < 75) //////////
+//   {
+//     drive(50, LEFT);
+//   }
+//   //delay(50);  /////
+//   stopRobot();
+//   delay(100);
+//   align(FORWARD);
+// }
 
 void scanRoom4()
 {
@@ -1210,38 +1231,26 @@ void scanRoom4()
     stopRobot();
     delay(50);
     align(RIGHT);
+    delay(300);
+    while(readUS(US_BL) > 30)
+    {
+      drive(50, LEFT);
+    }
+    stopRobot();
+    delay(20);
   }
   else
   {
     align(FORWARD);
     wallAlign(FORWARD, 8);
-  }
-  delay(300);
-  if(isDefault)
-  {
-    while(readUS(US_BL) > 30)
-    {
-      drive(50, LEFT);
-    }
-    delay(200);
-    stopRobot();
-  }
-  else
-  {
+    delay(300);
     while(readUS(US_BL) > 80)
     {
       drive(50, LEFT);
     }
-    delay(250);
+    delay(150);
     stopRobot();
-  }
-  delay(100);
-  if(isDefault)
-  {
-    delay(20);
-  }
-  else
-  {
+    delay(100);
     align(FORWARD);
     delay(50);
   }
@@ -1259,15 +1268,19 @@ void scanRoom4()
   if(!isDefault)
   {
     align(FORWARD);
-    wallAlign(FORWARD, 8);
-  }
-  delay(100);
-  if(!isDefault)
-  {
-    while(readUS(US_BR) < 90 || readUS(US_BL) < 85)
+    delay(100);
+    while((readUS(US_FL) + readUS(US_FR) / 2) > 15)
+    {
+      drive(550, FORWARD);
+    }
+    delay(100);
+    align(FORWARD);
+    delay(100);
+    while(readUS(US_BL) < 75)
     {
       drive(40, RIGHT);
     }
+    delay(250);
     stopRobot();
     delay(100);
     align(FORWARD);
@@ -1292,6 +1305,12 @@ void scanRoom4()
     faceCycle(FORWARD);
     delay(100);
     align(RIGHT);
+    if(isDog)
+    {
+      faceCycle(BACKWARD);
+      gyroUSDrive(50);
+      faceCycle(FORWARD);
+    }
   }
   delay(300);
   if (isCandle)
@@ -1314,7 +1333,7 @@ void startAlign()
 
 void checkDog()
 {
-  if((readIR(IR_LL) + readIR(IR_LR)) / 2.0 < 100)
+  if(readIR(IR_LL) < 100 && readIR(IR_LR) < 100)
   {
     isDog = false;
   }
@@ -1323,11 +1342,6 @@ void checkDog()
     isDog = true;
     originalMap[1][6] = '1';
     clearPath();
-    // originalMap[2][8] = '1';
-    // originalMap[5][7] = '0';
-    // isRoom1_1Default = false;
-    // isRoom1_1Checked = true;
-    // isRoom1_1Updated = true;
   }
 }
 
