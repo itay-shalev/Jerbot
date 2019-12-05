@@ -192,6 +192,7 @@ void loop()
   scanRoom2();
   align(FORWARD);
   mapDrive(50, ROOM_2_1, ROOM_3_1);
+  checkRoom4();
   scanRoom3();
   align(FORWARD);
   mapDrive(50, ROOM_3_1, ROOM_4_1);
@@ -929,7 +930,7 @@ void translateDrive(int speed)
     gyroUSDrive(speed);
   }
   stopRobot();
-  delay(500);
+  delay(200);
   faceCycle(FORWARD);
 }
 
@@ -1132,193 +1133,199 @@ void scanRoom2()
 
 void scanRoom3()
 {
+  bool candle_detected = false;
   faceCycle(FORWARD);
-  if (readUS(US_FR) > 15 && readUS(US_FL) > 15) //If both don't see a wall
+  while (readUS(US_FR) > 15 && readUS(US_FL) > 15) //If both don't see a wall
   {
-    gyroUSDrive(50);
+    drive(50, FORWARD);
     delay(100);
     align(FORWARD);
   }
-  else if ((readUS(US_FR) > 15 && readUS(US_FL) < 15) || (readUS(US_FR) < 15 && readUS(US_FL) > 15)) //Only if one of them sees a wall in front
+  if ((readUS(US_FR) > 15 && readUS(US_FL) < 15) || (readUS(US_FR) < 15 && readUS(US_FL) > 15)) //Only if one of them sees a wall in front
   {
     align(FORWARD);
   }
   delay(100);
-  while (readUS(US_BL) > 80 || readUS(US_BR) > 80 || (readUS(US_RL) + readUS(US_RR)) / 2.0 > 50)
+  while (readUS(US_BL) > 80 || readUS(US_BR) > 80 || (readUS(US_RL) + readUS(US_RR)) / 2.0 > 50) // If one of the back sensors don't see a wall and if the avg of the right sensors doesn't get too close
   {
     drive(50, RIGHT);
   }
   stopRobot();
-  stopProgram();
-}
-
-// void scanRoom3()
-// {
-//   faceCycle(FORWARD);
-//   align(FORWARD);
-//   delay(300);
-//   while((readUS(US_FR) + readUS(US_FL)) / 2.0 > 13)///////
-//   {
-//     drive(50, FORWARD);
-//   }
-//   stopRobot();
-//   delay(100);
-//   checkRoom4();
-//   while(readUS(US_BR) > 90 || readUS(US_BL) > 90 || readUS(US_RR) > 60)  
-//   {
-//     drive(50, RIGHT);
-//   }
-//   delay(120); /////////
-//   stopRobot();
-//   delay(100);
-//   gyroTurn(135, 50);
-//   delay(300);
-//   if(readUV())
-//   {
-//     stopRobot();
-//     pyroDetect();
-//     stopRobot();
-//     delay(50);
-//     gyroTurn(-135, 50);  //////////
-//     align(FORWARD);
-//     delay(100);
-//     while((readUS(US_FR) + readUS(US_FL)) / 2.0 > 12)
-//     {
-//      drive(50, FORWARD);
-//     }
-//     stopRobot();
-//     delay(100);
-//     align(FORWARD);
-//     delay(50);
-//     while((readUS(US_RL) + readUS(US_RR)) / 2 < 70)
-//     {
-//       drive(50, LEFT);
-//     }
-//     stopRobot();
-//     delay(300);
-//     align(FORWARD);
-//     mapDrive(50, ROOM_3_1, HOME_1);
-//     stopProgram();
-//   }  
-//   gyroTurn(-135, 50);
-//   delay(100);
-//   align(FORWARD);
-//   delay(100);
-//   wallAlign(FORWARD, 7);
-//   delay(100);
-//   while(readUS(US_RR) < 75) //////////
-//   {
-//     drive(50, LEFT);
-//   }
-//   //delay(50);  /////
-//   stopRobot();
-//   delay(100);
-//   align(FORWARD);
-// }
-
-void scanRoom4()
-{
-  bool isDefault = originalMap[8][6] == '0';
-  bool isCandle = false;
-  faceCycle(FORWARD);
+  gyroTurn(135, 50);
+  stopRobot();
+  delay(200);
+  if (readUV())
+  {
+    candle_detected = true;
+    // TODO: extinguish
+  }
+  gyroTurn(-135, 50);
   delay(50);
-  if(isDefault)
+  align(FORWARD);
+  delay(50);
+  while(readUS(US_FR) > 15 || readUS(US_FL) > 15) // If one of the front sensors is nt close to a wall
   {
-    while((readUS(US_FR) + readUS(US_FL)) / 2.0 < 52)
-    {
-      drive(50, BACKWARD);
-    }
-    stopRobot();
-    delay(50);
-    align(RIGHT);
-    delay(300);
-    while(readUS(US_BL) > 30)
-    {
-      drive(50, LEFT);
-    }
-    stopRobot();
-    delay(20);
+    drive(40, FORWARD);
   }
-  else
+  while(readUS(US_BL) < 80 && ((readUS(US_LL) + readUS(US_LR)) / 2 > 12)) // If the back left sensor doesn't see a hole and the avg of the left sensors is not a wall
   {
-    align(FORWARD);
-    wallAlign(FORWARD, 8);
-    delay(300);
-    while(readUS(US_BL) > 80)
-    {
-      drive(50, LEFT);
-    }
-    delay(150);
-    stopRobot();
-    delay(100);
-    align(FORWARD);
-    delay(50);
+    drive(50, LEFT);
   }
-  gyroTurn(isDefault ? -15 : 225, 50);
-  delay(300);
-  if(readUV())
+  stopRobot();
+  delay(50);
+  align(FORWARD);
+  if(candle_detected)
   {
-    isCandle = true;
-    delay(50);
-    pyroDetect();
-    delay(100);
-  }
-  gyroTurn(isDefault ? 25 : 135, 50);
-  delay(100);
-  if(!isDefault)
-  {
-    align(FORWARD);
-    delay(100);
-    while((readUS(US_FL) + readUS(US_FR) / 2) > 15)
-    {
-      drive(550, FORWARD);
-    }
-    delay(100);
-    align(FORWARD);
-    delay(100);
-    while(readUS(US_BL) < 75)
-    {
-      drive(40, RIGHT);
-    }
-    delay(250);
-    stopRobot();
-    delay(100);
-    align(FORWARD);
-    delay(20);
-    while(readUS(US_RL) > 30 && readUS(US_LR) > 30)
-    {
-      drive(42, BACKWARD);
-      delay(50);
-      drive(35, BACKWARD);
-      delay(10);
-    }
-    stopRobot();
-    delay(100);
-    faceCycle(BACKWARD);
-    gyroUSDrive(50);
-    delay(200);
-  }
-  else
-  {
-    faceCycle(RIGHT);
-    gyroUSDrive(50);
-    faceCycle(FORWARD);
-    delay(100);
-    align(RIGHT);
-    if(isDog)
+    if(readUS(US_LL) < 30 || readUS(US_LR) < 30)
     {
       faceCycle(BACKWARD);
       gyroUSDrive(50);
       faceCycle(FORWARD);
     }
-  }
-  delay(300);
-  if (isCandle)
-  {
-    mapDrive(50, ROOM_4_1, HOME_1);
+    mapDrive(50, ROOM_3_1, HOME_1);
     stopProgram();
   }
 }
+
+
+void scanRoom4()
+{
+  bool isDefault = !(originalMap[8][6] == '0');
+  bool candle_detected = false;
+  while(readUS(US_FL) < 10 || readUS(US_FR) < 10)
+  {
+    drive(30, BACKWARD);
+  }
+  stopRobot();
+  delay(50);
+  // if(!isDefault)
+  // {
+  //   faceCycle(BACKWARD);
+  //   gyroUSDrive(50);
+  //   faceCycle(FORWARD);
+  // }
+  // TODO: Check if it works without the code in comment
+  while(readUS(US_BL) > 80 || readUS(US_BR) > 80)
+  {
+    drive(50, LEFT);
+  }
+  delay(100);
+  stopRobot();
+  delay(50);
+  gyroTurn(isDefault ? -135 : -45, 50);
+  delay(200);
+  if(readUV())
+  {
+    candle_detected = true;
+    // TODO: Add scan and extinguish
+  }
+  gyroTurn(isDefault ? 135 : 45, 50);
+  stopProgram();
+}
+
+// void scanRoom4()
+// {
+//   bool isDefault = originalMap[8][6] == '0';
+//   bool isCandle = false;
+//   faceCycle(FORWARD);
+//   delay(50);
+//   if(isDefault)
+//   {
+//     while((readUS(US_FR) + readUS(US_FL)) / 2.0 < 52)
+//     {
+//       drive(50, BACKWARD);
+//     }
+//     stopRobot();
+//     delay(50);
+//     align(RIGHT);
+//     delay(300);
+//     while(readUS(US_BL) > 30)
+//     {
+//       drive(50, LEFT);
+//     }
+//     stopRobot();
+//     delay(20);
+//   }
+//   else
+//   {
+//     align(FORWARD);
+//     wallAlign(FORWARD, 8);
+//     delay(300);
+//     while(readUS(US_BL) > 80)
+//     {
+//       drive(50, LEFT);
+//     }
+//     delay(150);
+//     stopRobot();
+//     delay(100);
+//     align(FORWARD);
+//     delay(50);
+//   }
+//   gyroTurn(isDefault ? -15 : 225, 50);
+//   delay(300);
+//   if(readUV())
+//   {
+//     isCandle = true;
+//     delay(50);
+//     pyroDetect();
+//     delay(100);
+//   }
+//   gyroTurn(isDefault ? 25 : 135, 50);
+//   delay(100);
+//   if(!isDefault)
+//   {
+//     align(FORWARD);
+//     delay(100);
+//     while((readUS(US_FL) + readUS(US_FR) / 2) > 15)
+//     {
+//       drive(550, FORWARD);
+//     }
+//     delay(100);
+//     align(FORWARD);
+//     delay(100);
+//     while(readUS(US_BL) < 75)
+//     {
+//       drive(40, RIGHT);
+//     }
+//     delay(250);
+//     stopRobot();
+//     delay(100);
+//     align(FORWARD);
+//     delay(20);
+//     while(readUS(US_RL) > 30 && readUS(US_LR) > 30)
+//     {
+//       drive(42, BACKWARD);
+//       delay(50);
+//       drive(35, BACKWARD);
+//       delay(10);
+//     }
+//     stopRobot();
+//     delay(100);
+//     faceCycle(BACKWARD);
+//     gyroUSDrive(50);
+//     delay(200);
+//   }
+//   else
+//   {
+//     faceCycle(RIGHT);
+//     gyroUSDrive(50);
+//     faceCycle(FORWARD);
+//     delay(100);
+//     align(RIGHT);
+//     if(isDog)
+//     {
+//       faceCycle(BACKWARD);
+//       gyroUSDrive(50);
+//       faceCycle(FORWARD);
+//     }
+//   }
+//   delay(300);
+//   if (isCandle)
+//   {
+//     mapDrive(50, ROOM_4_1, HOME_1);
+//     stopProgram();
+//   }
+// }
 
 void startAlign()
 {
@@ -1390,7 +1397,69 @@ void pyroDetect()
 }
 
 
-
+// void scanRoom3()
+// {
+//   faceCycle(FORWARD);
+//   align(FORWARD);
+//   delay(300);
+//   while((readUS(US_FR) + readUS(US_FL)) / 2.0 > 13)///////
+//   {
+//     drive(50, FORWARD);
+//   }
+//   stopRobot();
+//   delay(100);
+//   checkRoom4();
+//   while(readUS(US_BR) > 90 || readUS(US_BL) > 90 || readUS(US_RR) > 60)  
+//   {
+//     drive(50, RIGHT);
+//   }
+//   delay(120); /////////
+//   stopRobot();
+//   delay(100);
+//   gyroTurn(135, 50);
+//   delay(300);
+//   if(readUV())
+//   {
+//     stopRobot();
+//     pyroDetect();
+//     stopRobot();
+//     delay(50);
+//     gyroTurn(-135, 50);  //////////
+//     align(FORWARD);
+//     delay(100);
+//     while((readUS(US_FR) + readUS(US_FL)) / 2.0 > 12)
+//     {
+//      drive(50, FORWARD);
+//     }
+//     stopRobot();
+//     delay(100);
+//     align(FORWARD);
+//     delay(50);
+//     while((readUS(US_RL) + readUS(US_RR)) / 2 < 70)
+//     {
+//       drive(50, LEFT);
+//     }
+//     stopRobot();
+//     delay(300);
+//     align(FORWARD);
+//     mapDrive(50, ROOM_3_1, HOME_1);
+//     stopProgram();
+//   }  
+//   gyroTurn(-135, 50);
+//   delay(100);
+//   align(FORWARD);
+//   delay(100);
+//   wallAlign(FORWARD, 7);
+//   delay(100);
+//   while(readUS(US_RR) < 75) //////////
+//   {
+//     drive(50, LEFT);
+//   }
+//   //delay(50);  /////
+//   stopRobot();
+//   delay(100);
+//   align(FORWARD);
+// }
 
 
 // void wallDrive(int speed, int dir, int face, bool both)
