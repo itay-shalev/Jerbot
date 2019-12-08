@@ -192,7 +192,6 @@ void loop()
   scanRoom2();
   align(FORWARD);
   mapDrive(50, ROOM_2_1, ROOM_3_1);
-  checkRoom4();
   scanRoom3();
   align(FORWARD);
   mapDrive(50, ROOM_3_1, ROOM_4_1);
@@ -1146,6 +1145,7 @@ void scanRoom3()
     align(FORWARD);
   }
   delay(100);
+  checkRoom4();
   while (readUS(US_BL) > 80 || readUS(US_BR) > 80 || (readUS(US_RL) + readUS(US_RR)) / 2.0 > 50) // If one of the back sensors don't see a wall and if the avg of the right sensors doesn't get too close
   {
     drive(50, RIGHT);
@@ -1197,19 +1197,12 @@ void scanRoom4()
     drive(30, BACKWARD);
   }
   stopRobot();
-  delay(50);
-  // if(!isDefault)
-  // {
-  //   faceCycle(BACKWARD);
-  //   gyroUSDrive(50);
-  //   faceCycle(FORWARD);
-  // }
-  // TODO: Check if it works without the code in comment
-  while(readUS(US_BL) > 80 || readUS(US_BR) > 80)
+  delay(100);
+  while(readUS(US_BL) > 80 || readUS(US_BR) > 80 || (!isDefault ? readUS(US_RR) < 30 || readUS(US_RL) < 30 : 0))
   {
     drive(50, LEFT);
   }
-  delay(100);
+  delay(150);
   stopRobot();
   delay(50);
   gyroTurn(isDefault ? -135 : -45, 50);
@@ -1220,7 +1213,25 @@ void scanRoom4()
     // TODO: Add scan and extinguish
   }
   gyroTurn(isDefault ? 135 : 45, 50);
-  stopProgram();
+  if(!isDefault)
+  {
+    delay(100);
+    faceCycle(RIGHT);
+    gyroUSDrive(50);
+    faceCycle(FORWARD);
+  }
+  else
+  {
+    while(readUS(US_BL) < 80 || readUS(US_BR) < 80)
+    {
+      drive(50, RIGHT);
+    }
+    stopRobot();
+    faceCycle(BACKWARD);
+    gyroUSDrive(50);
+  }
+  faceCycle(BACKWARD);
+  gyroUSDrive(50);
 }
 
 // void scanRoom4()
