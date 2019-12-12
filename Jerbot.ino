@@ -205,8 +205,8 @@ void loop()
   else
   {
     mapDrive(50,ROOM_4_1, HOME_1);
-
   }
+  pyroDetect();
   delay(1000000);
 }
 
@@ -1114,6 +1114,14 @@ void scanRoom2()
     stopRobot();
     delay(50);
     pyroDetect();
+    delay(100);
+    align(LEFT);
+    delay(50);
+    while(readUS(US_LL) > 15 || readUS(US_LR) > 15)
+    {
+      drive(50, LEFT);
+    }
+    stopRobot();
     while(readUS(US_BR) > 15)
     {
       drive(50, BACKWARD);
@@ -1157,7 +1165,8 @@ void scanRoom3()
   if (readUV())
   {
     candle_detected = true;
-    // TODO: extinguish
+    pyroDetect();
+    delay(100);
   }
   gyroTurn(-135, 50);
   delay(50);
@@ -1403,8 +1412,9 @@ void pyroDetect()
   }
   digitalWrite(M_FAN, LOW);
   delay(200);
-  yaw = yaw > 0 ? (abs(yaw) % 360) : (abs(yaw) % 360) * -1;
-  gyroTurn((yaw > 0 ? yaw + 5 : yaw - 5), 50);
+  yaw = yaw > 0 ? (abs(yaw) % 360) : ((abs(yaw) % 360) * -1);
+  gyroTurn((yaw > 0 ? yaw + 5 : yaw), 20);
+  faceCycle(FORWARD);
 }
 
 
