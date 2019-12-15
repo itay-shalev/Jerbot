@@ -178,7 +178,7 @@ void loop()
   {
     mapDrive(50, HOME_1, ROOM_1_1);
     align(BACKWARD);
-    checkRoom1();
+    checkRoom1(false);
     if(isRoom1_1Default)
     {
       scanRoom1();
@@ -196,18 +196,17 @@ void loop()
   align(FORWARD);
   mapDrive(50, ROOM_3_1, ROOM_4_1);
   scanRoom4();
-  if(isDog)
+  if(isDog || !isRoom1_1Default)
   {
-    mapDrive(50, 5, 6, ROOM_1_1);
+    checkRoom1(true);
     scanRoom1();
     mapDrive(50, ROOM_1_1, HOME_1);
   }
   else
   {
-    mapDrive(50,ROOM_4_1, HOME_1);
+    mapDrive(50, ROOM_4_1, HOME_1);
   }
-  pyroDetect();
-  delay(1000000);
+  stopProgram();
 }
 
 
@@ -496,7 +495,7 @@ void gyroUSDrive(int speed)
   
 
   //Find on what wall to follow, drives forward untill finds wall if starts with no walls around him.
-  while(!foundWall)
+  while(!foundWall && (readUS(US_FR) > minDist) && (readUS(US_FL) > minDist))
   {
     if (readUS(US_RL) <  30 && readUS(US_RR) <  30)
     {
@@ -991,21 +990,44 @@ void checkRoom4()
   clearPath();
 }
 
-void checkRoom1()
+void checkRoom1(bool reversed)
 {
   isRoom1_1Checked = true;
   faceCycle(FORWARD);
-  if(readUS(US_LL) > 20 && readUS(US_LR) > 20)
+  if(reversed)
   {
-    originalMap[2][8] = '0';
-    originalMap[5][7] = '1';
-    isRoom1_1Default = true;
+    while(readUS(US_BL) > 80 || readUS(US_BR) > 80 || readUS(US_FL) > 20 || readUS(US_FR) > 20)
+    {
+      drive(50, LEFT);
+    }
+    stopRobot();
+    if(readUS(US_BL) < 20 && readUS(US_BR) < 20)
+    {
+      originalMap[2][8] = '0';
+      originalMap[5][7] = '1';
+      isRoom1_1Default = true;
+    }
+    else
+    {
+      originalMap[2][8] = '1';
+      originalMap[5][7] = '0';
+      isRoom1_1Default = false;
+    } 
   }
   else
   {
-    originalMap[2][8] = '1';
-    originalMap[5][7] = '0';
-    isRoom1_1Default = false;
+    if(readUS(US_LL) > 20 && readUS(US_LR) > 20)
+    {
+      originalMap[2][8] = '0';
+      originalMap[5][7] = '1';
+      isRoom1_1Default = true;
+    }
+    else
+    {
+      originalMap[2][8] = '1';
+      originalMap[5][7] = '0';
+      isRoom1_1Default = false;
+    } 
   }
   clearPath();
 }
@@ -1015,22 +1037,8 @@ void scanRoom1()
 {
   faceCycle(FORWARD);
   delay(50);
-  if(originalMap[2][8] == '1' && originalMap[5][7] == '0')
+  if(!isRoom1_1Default)
   {
-    while(readUS(US_RR) < 30)
-    {
-      drive(50, BACKWARD);
-    }
-    delay(100);
-    stopRobot();
-    delay(100);
-    while(readUS(US_BL) > 60)
-    {
-      drive(50, LEFT);
-    }
-    delay(50);
-    stopRobot();
-    delay(100);
     align(FORWARD);
     delay(50);
     gyroTurn(180, 50);
@@ -1044,12 +1052,7 @@ void scanRoom1()
       }
       stopRobot();
       delay(50);
-      digitalWrite(M_FAN, HIGH);
-      while(readUV())
-      {
-        delay(0.5);
-      }
-      digitalWrite(M_FAN, LOW);
+      pyroDetect();
       while(readUS(US_BR) > 15)
       {
         drive(50, BACKWARD);
@@ -1061,12 +1064,9 @@ void scanRoom1()
     delay(50);
     align(FORWARD);
     delay(100);
-    while(readUS(US_FL) < 30)
-    {
-      drive(50, RIGHT);
-    }
-    delay(150);
-    stopRobot();
+    faceCycle(RIGHT);
+    gyroUSDrive(50);
+    faceCycle(FORWARD);
   }
   else
   {
@@ -1145,9 +1145,10 @@ void scanRoom3()
   while (readUS(US_FR) > 15 && readUS(US_FL) > 15) //If both don't see a wall
   {
     drive(50, FORWARD);
-    delay(100);
-    align(FORWARD);
   }
+  delay(100);
+  stopRobot();
+  align(FORWARD);
   if ((readUS(US_FR) > 15 && readUS(US_FL) < 15) || (readUS(US_FR) < 15 && readUS(US_FL) > 15)) //Only if one of them sees a wall in front
   {
     align(FORWARD);
@@ -1224,10 +1225,16 @@ void scanRoom4()
   gyroTurn(isDefault ? 135 : 45, 50);
   if(!isDefault)
   {
+    delay(200);
+    align(RIGHT);
     delay(100);
     faceCycle(RIGHT);
-    gyroUSDrive(50);
+    while(readUS(US_FR) > 10 && readUS(US_FL) > 10)
+    {
+      gyroUSDrive(50);
+    }
     faceCycle(FORWARD);
+    align(RIGHT);
   }
   else
   {
