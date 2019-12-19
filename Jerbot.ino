@@ -181,7 +181,7 @@ void loop()
     checkRoom1(false);
     if(isRoom1_1Default)
     {
-      scanRoom1();
+      scanRoom1(false);
     }
     mapDrive(50, ROOM_1_1, ROOM_2_1);
   }
@@ -199,7 +199,7 @@ void loop()
   if(isDog || !isRoom1_1Default)
   {
     checkRoom1(true);
-    scanRoom1();
+    scanRoom1(true);
     mapDrive(50, ROOM_1_1, HOME_1);
   }
   else
@@ -398,11 +398,6 @@ double readUS(int US)
     ans += (pulseIn(Echo, HIGH) * 0.034) / 2;
     delayMicroseconds(10);
   }
-  // ans = ans / 3.0;
-  // if (ans > 200)
-  // {
-  //   stopRobot();
-  // }
   return ans / 3.0;
 }
 
@@ -996,6 +991,22 @@ void checkRoom1(bool reversed)
   faceCycle(FORWARD);
   if(reversed)
   {
+    while(readUS(US_RR) < 15 || readUS(US_RL) < 15)
+    {
+      if (readUS(US_RR) < 15)
+      {
+        drive(30, FORWARD);
+      }
+      else if (readUS(US_RL) < 15)
+      {
+        drive(30, BACKWARD);
+      }
+      else
+      {
+        stopRobot();
+      }
+    }
+    stopRobot();
     while(readUS(US_BL) > 80 || readUS(US_BR) > 80 || readUS(US_FL) > 20 || readUS(US_FR) > 20)
     {
       drive(50, LEFT);
@@ -1033,7 +1044,7 @@ void checkRoom1(bool reversed)
 }
 
 
-void scanRoom1()
+void scanRoom1(bool reversed)
 {
   faceCycle(FORWARD);
   delay(50);
@@ -1070,6 +1081,10 @@ void scanRoom1()
   }
   else
   {
+    if (reversed)
+    {
+      mapDrive(50, 8, 6, ROOM_1_1);
+    }
     if (readUV())
     {
       align(BACKWARD);
@@ -1080,12 +1095,7 @@ void scanRoom1()
       }
       stopRobot();
       delay(50);
-      digitalWrite(M_FAN, HIGH);
-      while(readUV())
-      {
-        delay(0.5);
-      }
-      digitalWrite(M_FAN, LOW);
+      pyroDetect();
       while(readUS(US_BR) > 15)
       {
         drive(50, BACKWARD);
@@ -1229,7 +1239,7 @@ void scanRoom4()
     align(RIGHT);
     delay(100);
     faceCycle(RIGHT);
-    while(readUS(US_FR) > 10 && readUS(US_FL) > 10)
+    while(readUS(US_FR) > 20 && readUS(US_FL) > 20)
     {
       gyroUSDrive(50);
     }
