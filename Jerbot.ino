@@ -26,6 +26,8 @@
 #define UV 33
 #define P_R 28
 #define P_L 29
+#define F_LED 27
+#define MIC_LED 26
 
 #define SPEED_LIMIT(x) (80 - x)
 #define X 12
@@ -124,10 +126,6 @@ int US_LL = O_US_LL;
 int US_LR = O_US_LR;
 int US_BR = O_US_BR;
 
-// ***** Function declares ***** //
-void mapDrive(int speed, int x1, int y1, int x2, int y2);
-void motorControl(int motor, int speed, int dir);
-
 // ***** Map Variables ***** //
 bool isRoom4_1Checked = false;
 bool isRoom1_1Checked = false;
@@ -167,11 +165,14 @@ void setup()
   initUS(US_RL);
   initUS(US_FR);
   pinMode(UV, INPUT);
+  pinMode(F_LED, OUTPUT);
+  pinMode(MIC_LED, OUTPUT);
   pyroSetup();
 }
 
 void loop()
 {
+  digitalWrite(MIC_LED, HIGH);
   startAlign();
   checkDog();
   if(!isDog)
@@ -196,6 +197,7 @@ void loop()
   align(FORWARD);
   mapDrive(50, ROOM_3_1, ROOM_4_1);
   scanRoom4();
+  isDog = true;
   if(isDog || !isRoom1_1Default)
   {
     checkRoom1(true);
@@ -278,7 +280,7 @@ double getYaw()
   timer = millis();
   Vector norm = mpu.readNormalizeGyro();
   
-  yaw += norm.ZAxis * timeStep;
+  yaw += abs(norm.ZAxis * timeStep) > 0.5 ? norm.ZAxis * timeStep : 0;
   delay(timeStep * 1000 - (millis() - timer));
   return yaw;
 }
@@ -991,21 +993,21 @@ void checkRoom1(bool reversed)
   faceCycle(FORWARD);
   if(reversed)
   {
-    while(readUS(US_RR) < 15 || readUS(US_RL) < 15)
-    {
-      if (readUS(US_RR) < 15)
-      {
-        drive(30, FORWARD);
-      }
-      else if (readUS(US_RL) < 15)
-      {
-        drive(30, BACKWARD);
-      }
-      else
-      {
-        stopRobot();
-      }
-    }
+    // while(readUS(US_RR) < 15 || readUS(US_RL) < 15)
+    // {
+    //   if (readUS(US_RR) < 15)
+    //   {
+    //     drive(30, FORWARD);
+    //   }
+    //   else if (readUS(US_RL) < 15)
+    //   {
+    //     drive(30, BACKWARD);
+    //   }
+    //   else
+    //   {
+    //     stopRobot();
+    //   }
+    // }
     stopRobot();
     while(readUS(US_BL) > 80 || readUS(US_BR) > 80 || readUS(US_FL) > 20 || readUS(US_FR) > 20)
     {
@@ -1113,11 +1115,12 @@ void scanRoom2()
   faceCycle(FORWARD);
   align(FORWARD);
   delay(100);
-  gyroTurn(180, 50);
+  gyroTurn(-80, 50);
+  gyroTurn(-80, 50);
   delay(300);
   if(readUV())
   {
-    while((readUS(US_BR)+readUS(US_BL)) / 2 < 48)
+    while((readUS(US_BR) + readUS(US_BL)) / 2 < 48)
     {
       drive(50, FORWARD);
     }
@@ -1142,7 +1145,8 @@ void scanRoom2()
     mapDrive(50, ROOM_2_1, HOME_1);
     stopProgram();
   }
-  gyroTurn(180, 50);
+  gyroTurn(80, 50);
+  gyroTurn(80, 50);
   delay(100);
   align(FORWARD);
   delay(100);
@@ -1212,13 +1216,17 @@ void scanRoom4()
 {
   bool isDefault = !(originalMap[8][6] == '0');
   bool candle_detected = false;
+  align(FORWARD);
+  delay(50);
   while(readUS(US_FL) < 10 || readUS(US_FR) < 10)
   {
     drive(30, BACKWARD);
   }
   stopRobot();
-  delay(100);
-  while(readUS(US_BL) > 80 || readUS(US_BR) > 80 || (!isDefault ? readUS(US_RR) < 30 || readUS(US_RL) < 30 : 0))
+  delay(50);
+  align(FORWARD);
+  delay(50);
+  while(readUS(US_BL) > 80 || readUS(US_BR) > 80 || (!isDefault ? readUS(US_RR) < 30 || readUS(US_RL) < 30 : 0) || (isDefault ? readUS(US_LR) > 100 && readUS(US_LL) > 100 : 0))
   {
     drive(50, LEFT);
   }
@@ -1230,7 +1238,7 @@ void scanRoom4()
   if(readUV())
   {
     candle_detected = true;
-    // TODO: Add scan and extinguish
+    pyroDetect();
   }
   gyroTurn(isDefault ? 135 : 45, 50);
   if(!isDefault)
@@ -1248,13 +1256,29 @@ void scanRoom4()
   }
   else
   {
-    while(readUS(US_BL) < 80 || readUS(US_BR) < 80)
+    align(FORWARD);
+    delay(100);
+    while(readUS(US_FL) < 10 || readUS(US_FR) < 10)
+    {
+      drive(30, BACKWARD);
+    }
+    stopRobot();
+    delay(100);
+    align(FORWARD);
+    delay(100);
+    while((readUS(US_BL) < 80 || readUS(US_BR) < 80) && readUS(US_RL) < 100)
     {
       drive(50, RIGHT);
     }
     stopRobot();
-    faceCycle(BACKWARD);
-    gyroUSDrive(50);
+    delay(100);
+    align(FORWARD);
+    delay(100);
+    motorControl(M_FL, 10, BACKWARD);
+    motorControl(M_FR, 50, FORWARD);
+    motorControl(M_BL, 10, BACKWARD);
+    motorControl(M_BR, 50, FORWARD);
+    delay(50);
   }
   faceCycle(BACKWARD);
   gyroUSDrive(50);
@@ -1408,6 +1432,7 @@ int pyroRead(int pyro)
 void pyroDetect()
 {
   yaw = 0;
+  digitalWrite(F_LED, HIGH);
   while(!pyroRead(P_R) || !pyroRead(P_L))
   {
     yaw = getYaw();
@@ -1425,13 +1450,13 @@ void pyroDetect()
   digitalWrite(M_FAN, HIGH);
   while(readUV())
   {
-    delay(0.5);
   }
   digitalWrite(M_FAN, LOW);
   delay(200);
   yaw = yaw > 0 ? (abs(yaw) % 360) : ((abs(yaw) % 360) * -1);
-  gyroTurn((yaw > 0 ? yaw + 5 : yaw), 20);
+  gyroTurn((yaw > 0 ? yaw : yaw), 20);
   faceCycle(FORWARD);
+  digitalWrite(F_LED, LOW);
 }
 
 
