@@ -172,6 +172,12 @@ void setup()
 
 void loop()
 {
+  align(FORWARD);
+  stopProgram();
+}
+
+void _loop()
+{
   digitalWrite(MIC_LED, HIGH);
   delay(100);
   digitalWrite(MIC_LED, LOW);
@@ -335,61 +341,31 @@ int readIR(int ir)
   return analogRead(ir);
 }
 
+int limitSpeed(int speed, int min, int max)
+{
+  return speed > max ? max : (speed < min ? min : speed);
+}
+
 void align(int face)
 {
   double p = 7;
-  int err = 0; 
-  int left_us = 0; 
-  int right_us = 0;
-  int turnDir = FORWARD;
-  faceCycle(FORWARD);
-  switch (face)
-  {
-      case FORWARD:
-          left_us = US_FL;
-          right_us = US_FR;
-          break;
-      case RIGHT:
-          left_us = US_RL;
-          right_us = US_RR;
-          break;
-      case BACKWARD:
-          left_us = US_BL;
-          right_us = US_BR;
-          break;
-      case LEFT:
-          left_us = US_LL;
-          right_us = US_LR;
-          break;
-  }
-  err = (int)readUS(left_us) - (int)readUS(right_us);
+  int err = 1; 
+  int prevFace = currFace;
+  faceCycle(face);
   while (abs(err) != 0)
   {
+    err = (int)readUS(US_FL) - (int)readUS(US_FR);
     if (err > 0)
     {
-      turn((p * abs(err)) > 60 ? 60 : (p*abs(err)) < 20 ? 20 : (p*abs(err)), RIGHT);
+      turn(limitSpeed(p * abs(err), 30, 60), RIGHT);
     }
-    else
+    else if (err < 0)
     {
-      turn((p * abs(err)) > 60 ? 60 : (p*abs(err)) < 20 ? 20 : (p*abs(err)), LEFT);
+      turn(limitSpeed(p * abs(err), 30, 60), LEFT);
     }
-    err = (int)readUS(left_us) - (int)readUS(right_us);
   }
   stopRobot();
-  err = (int)readUS(left_us) - (int)readUS(right_us);
-  while (abs(err) != 0)
-  {
-    if (err > 0)
-    {
-      turn((p * abs(err)) > 60 ? 60 : (p*abs(err)) < 15 ? 15 : (p*abs(err)), RIGHT);
-    }
-    else
-    {
-      turn((p * abs(err)) > 60 ? 60 : (p*abs(err)) < 15 ? 15 : (p*abs(err)), LEFT);
-    }
-    err = (int)readUS(left_us) - (int)readUS(right_us);
-  }
-  stopRobot();
+  faceCycle(prevFace);
 }
 
 
@@ -959,6 +935,7 @@ void scanRoom1(bool reversed)
     align(FORWARD);
     delay(50);
     gyroTurn(180, 50);
+    delay(200);
     if (readUV())
     {
       align(BACKWARD);
@@ -1086,11 +1063,11 @@ void scanRoom3()
     pyroDetect();
     delay(100);
   }
-  gyroTurn(-135, 50);
+  gyroTurn(-140, 50);
   delay(50);
   align(FORWARD);
   delay(50);
-  while(readUS(US_FR) > 15 || readUS(US_FL) > 15) // If one of the front sensors is nt close to a wall
+  while(readUS(US_FR) > 15 || readUS(US_FL) > 15) // If one of the front sensors is not close to a wall
   {
     drive(40, FORWARD);
   }
@@ -1129,6 +1106,12 @@ void scanRoom4()
   delay(50);
   align(FORWARD);
   delay(50);
+  while(readUS(US_FR) > 15 || readUS(US_FL) > 15) // If one of the front sensors is not close to a wall
+  {
+    drive(40, FORWARD);
+  }
+  stopRobot();
+  delay(50);
   while(readUS(US_BL) > 80 || readUS(US_BR) > 80 || (!isDefault ? readUS(US_RR) < 30 || readUS(US_RL) < 30 : 0) || (isDefault ? readUS(US_LR) > 100 && readUS(US_LL) > 100 : 0))
   {
     drive(50, LEFT);
@@ -1166,8 +1149,14 @@ void scanRoom4()
       drive(30, BACKWARD);
     }
     stopRobot();
-    delay(100);
+    delay(50);
     align(FORWARD);
+    delay(50);
+    while(readUS(US_FR) > 15 || readUS(US_FL) > 15) // If one of the front sensors is not close to a wall
+    {
+      drive(40, FORWARD);
+    }
+    stopRobot();
     delay(100);
     while((readUS(US_BL) < 80 || readUS(US_BR) < 80) && readUS(US_RL) < 100)
     {
