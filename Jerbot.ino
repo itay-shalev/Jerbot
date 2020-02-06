@@ -172,12 +172,6 @@ void setup()
 
 void loop()
 {
-  align(FORWARD);
-  stopProgram();
-}
-
-void _loop()
-{
   digitalWrite(MIC_LED, HIGH);
   delay(100);
   digitalWrite(MIC_LED, LOW);
@@ -221,14 +215,23 @@ void _loop()
 
 void motorControl(int motor, int speed, int dir)
 {
+  float multiplier = 1;
+  if (motor == O_M_FR)
+  {
+    multiplier = 0.97;
+  }
+  else if (motor == O_M_BR)
+  {
+    multiplier = 0.98;
+  }
   if (dir)
   {
-    analogWrite(motor, map(speed, 0, 100, 0, 255));
+    analogWrite(motor, (int)(map(speed, 0, 100, 0, 255) * multiplier));
     digitalWrite(motor + 1, LOW);
   }
   else
   {
-    analogWrite(motor + 1, map(speed, 0, 100, 0, 255));
+    analogWrite(motor + 1, (int)(map(speed, 0, 100, 0, 255) * multiplier));
     digitalWrite(motor, LOW);
   }
 }
@@ -1096,6 +1099,7 @@ void scanRoom4()
 {
   bool isDefault = !(originalMap[8][6] == '0');
   bool candle_detected = false;
+  // Get back from the wall
   align(FORWARD);
   delay(50);
   while(readUS(US_FL) < 10 || readUS(US_FR) < 10 || (!isDefault ? readUS(US_FL) < 52 || readUS(US_FR) < 52 : 0))
@@ -1104,14 +1108,18 @@ void scanRoom4()
   }
   stopRobot();
   delay(50);
+
+  // If the room is default it goes backwards
   align(FORWARD);
   delay(50);
-  while(readUS(US_FR) > 15 || readUS(US_FL) > 15) // If one of the front sensors is not close to a wall
+  while(isDefault && (readUS(US_FR) > 15 || readUS(US_FL) > 15))
   {
     drive(40, FORWARD);
   }
   stopRobot();
   delay(50);
+
+  // Goes left into the room
   while(readUS(US_BL) > 80 || readUS(US_BR) > 80 || (!isDefault ? readUS(US_RR) < 30 || readUS(US_RL) < 30 : 0) || (isDefault ? readUS(US_LR) > 100 && readUS(US_LL) > 100 : 0))
   {
     drive(50, LEFT);
@@ -1119,16 +1127,25 @@ void scanRoom4()
   delay(150);
   stopRobot();
   delay(50);
+
+  // Turns to face the candle
   gyroTurn(isDefault ? -135 : -45, 50);
   delay(200);
+
+  // If there is fire it detects it and extinguishes it
   if(readUV())
   {
     candle_detected = true;
     pyroDetect();
   }
+
+  // Turn back to the hallway
   gyroTurn(isDefault ? 135 : 45, 50);
+
+
   if(!isDefault)
   {
+    // Goes out of the room
     delay(200);
     align(RIGHT);
     delay(100);
@@ -1142,6 +1159,7 @@ void scanRoom4()
   }
   else
   {
+    // Goes away from the front wall
     align(FORWARD);
     delay(100);
     while(readUS(US_FL) < 10 || readUS(US_FR) < 10)
@@ -1152,12 +1170,16 @@ void scanRoom4()
     delay(50);
     align(FORWARD);
     delay(50);
+
+    // Goes to the wall if it is too far
     while(readUS(US_FR) > 15 || readUS(US_FL) > 15) // If one of the front sensors is not close to a wall
     {
       drive(40, FORWARD);
     }
     stopRobot();
     delay(100);
+
+    // Goes out of the room
     while((readUS(US_BL) < 80 || readUS(US_BR) < 80) && readUS(US_RL) < 100)
     {
       drive(50, RIGHT);
@@ -1166,12 +1188,15 @@ void scanRoom4()
     delay(100);
     align(FORWARD);
     delay(100);
+
+    // Starts driving diagonaly
     motorControl(M_FL, 10, BACKWARD);
     motorControl(M_FR, 50, FORWARD);
     motorControl(M_BL, 10, BACKWARD);
     motorControl(M_BR, 50, FORWARD);
     delay(50);
   }
+  // Goes back out of the room to the junction
   faceCycle(BACKWARD);
   gyroUSDrive(50);
 }
