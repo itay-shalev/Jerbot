@@ -177,6 +177,7 @@ void loop()
   digitalWrite(MIC_LED, LOW);
   startAlign();
   checkDog();
+  motorControl(O_M_FR, 30, BACKWARD);
   if(!isDog)
   {
     mapDrive(50, HOME_1, ROOM_1_1);
@@ -215,23 +216,14 @@ void loop()
 
 void motorControl(int motor, int speed, int dir)
 {
-  float multiplier = 1;
-  if (motor == O_M_FR)
-  {
-    multiplier = 0.97;
-  }
-  else if (motor == O_M_BR)
-  {
-    multiplier = 0.98;
-  }
   if (dir)
   {
-    analogWrite(motor, (int)(map(speed, 0, 100, 0, 255) * multiplier));
+    analogWrite(motor, (int)(map(speed, 0, 100, 0, 255)));
     digitalWrite(motor + 1, LOW);
   }
   else
   {
-    analogWrite(motor + 1, (int)(map(speed, 0, 100, 0, 255) * multiplier));
+    analogWrite(motor + 1, (int)(map(speed, 0, 100, 0, 255)));
     digitalWrite(motor, LOW);
   }
 }
@@ -239,31 +231,32 @@ void motorControl(int motor, int speed, int dir)
 
 void drive(int speed, int dir)
 {
+  int _speed = speed;
   switch(dir)
   {
     case BACKWARD:
-      motorControl(M_FL, speed, BACKWARD);
-      motorControl(M_FR, speed, FORWARD);
-      motorControl(M_BL, speed, BACKWARD);
-      motorControl(M_BR, speed, FORWARD);
+      motorControl(M_FL, _speed, BACKWARD);
+      motorControl(M_FR, _speed, FORWARD);
+      motorControl(M_BL, _speed, BACKWARD);
+      motorControl(M_BR, _speed, FORWARD);
       break;
     case FORWARD:
-      motorControl(M_FL, speed, FORWARD);
-      motorControl(M_FR, speed, BACKWARD);
-      motorControl(M_BL, speed, FORWARD);
-      motorControl(M_BR, speed, BACKWARD);
+      motorControl(M_FL, _speed, FORWARD);
+      motorControl(M_FR, _speed, BACKWARD);
+      motorControl(M_BL, _speed, FORWARD);
+      motorControl(M_BR, _speed, BACKWARD);
       break;
-    case LEFT:
-      motorControl(M_FL, speed, BACKWARD);
-      motorControl(M_FR, speed, BACKWARD);
-      motorControl(M_BL, speed, FORWARD);
-      motorControl(M_BR, speed, FORWARD);
+   case LEFT:
+      motorControl(M_FL, _speed, BACKWARD);
+      motorControl(M_FR, _speed, BACKWARD);
+      motorControl(M_BL, _speed, FORWARD);
+      motorControl(M_BR, _speed, FORWARD);
       break;
     case RIGHT:
-      motorControl(M_FL, speed, FORWARD);
-      motorControl(M_FR, speed, FORWARD);
-      motorControl(M_BL, speed, BACKWARD);
-      motorControl(M_BR, speed, BACKWARD);
+      motorControl(M_FL, _speed, FORWARD);
+      motorControl(M_FR, _speed, FORWARD);
+      motorControl(M_BL, _speed, BACKWARD);
+      motorControl(M_BR, _speed, BACKWARD);
       break;
   }
 }
@@ -374,7 +367,7 @@ void align(int face)
 
 void gyroUSDrive(int speed)
 {
-  double pYaw = 4, pUS = 3; // The fix of the driving, p_gyro for gyro, p_us for ultrasonic.
+  double pYaw = 5, pUS = 2; // The fix of the driving, p_gyro for gyro, p_us for ultrasonic.
   double yawFix = 0;
   int wallDist = 9; // The distance that the robot keeps from te selected wall.
   int usFix = 0;
@@ -387,11 +380,13 @@ void gyroUSDrive(int speed)
   bool foundWall = false;
   int minDist = 20;
   int negativeFace = 1;
+  double _speed = 20.0;
   
 
   //Find on what wall to follow, drives forward untill finds wall if starts with no walls around him.
   while(!foundWall && (readUS(US_FR) > minDist) && (readUS(US_FL) > minDist))
   {
+    _speed += _speed < speed ? 5 : 0;
     if (readUS(US_RL) <  30 && readUS(US_RR) <  30)
     {
       currDistUS = US_RL;
@@ -410,7 +405,7 @@ void gyroUSDrive(int speed)
     }
     else
     {
-      drive(speed, FORWARD);
+      drive(_speed, FORWARD);
     }
   }
 
@@ -425,6 +420,8 @@ void gyroUSDrive(int speed)
   
   while (!checkHole(US_LL, flagUS_LL) && !checkHole(US_RR, flagUS_RR) && (readUS(US_FR) > minDist) && (readUS(US_FL) > minDist))
   {
+    _speed += _speed < speed ? 5 : 0;
+    
     if(readUS(US_RR) < 30 && !flagUS_RR)
     {
       flagUS_RR = true;
@@ -433,20 +430,25 @@ void gyroUSDrive(int speed)
     {
       flagUS_LL = true;
     }
-    
+
     if(readUS(currDistUS) > 30)
     {
-      drive(speed, FORWARD);
+      drive(_speed, FORWARD);
     }
     else
     {
-      yawFix = (((readUS(currRYawUS) - readUS(currLYawUS)) * pYaw > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : (readUS(currRYawUS) - readUS(currLYawUS)) * pYaw));
-      usFix = negativeUS * (((readUS(currDistUS) - wallDist) * pUS) > SPEED_LIMIT(speed) ? SPEED_LIMIT(speed) : ((readUS(currDistUS) - wallDist) * pUS));
+      yawFix = (((readUS(currRYawUS) - readUS(currLYawUS)) * pYaw > SPEED_LIMIT(_speed) ? SPEED_LIMIT(_speed) : (readUS(currRYawUS) - readUS(currLYawUS)) * pYaw));
+      usFix = negativeUS * (((readUS(currDistUS) - wallDist) * pUS) > SPEED_LIMIT(_speed) ? SPEED_LIMIT(_speed) : ((readUS(currDistUS) - wallDist) * pUS));
   
-      motorControl(M_FR, speed - usFix, BACKWARD);
-      motorControl(M_FL, readUS(currRYawUS) > 30 || readUS(currLYawUS) > 30 ? speed : speed - yawFix, FORWARD); // affected by gyro fix
-      motorControl(M_BR, readUS(currRYawUS) > 30 || readUS(currLYawUS) > 30 ? speed : speed + yawFix, BACKWARD); // affected by gyro fix
-      motorControl(M_BL, speed - usFix, FORWARD);
+      motorControl(M_FR, _speed - usFix, BACKWARD);
+      motorControl(M_FL, readUS(currRYawUS) > 30 || readUS(currLYawUS) > 30 ? _speed : _speed - yawFix, FORWARD); // affected by gyro fix
+      motorControl(M_BR, readUS(currRYawUS) > 30 || readUS(currLYawUS) > 30 ? _speed : _speed + yawFix, BACKWARD); // affected by gyro fix
+      motorControl(M_BL, _speed - usFix, FORWARD);
+    }
+
+    if(checkHole(US_RL, flagUS_RR) || checkHole(US_LR, flagUS_LL))
+    {
+      drive(_speed, FORWARD);
     }
   }
   stopRobot();
@@ -1058,7 +1060,7 @@ void scanRoom3()
     drive(50, RIGHT);
   }
   stopRobot();
-  gyroTurn(135, 50);
+  gyroTurn(100, 50);
   delay(200);
   if (readUV())
   {
@@ -1066,7 +1068,7 @@ void scanRoom3()
     pyroDetect();
     delay(100);
   }
-  gyroTurn(-140, 50);
+  gyroTurn(-105, 50);
   delay(50);
   align(FORWARD);
   delay(50);
@@ -1110,8 +1112,11 @@ void scanRoom4()
   delay(50);
 
   // If the room is default it goes backwards
-  align(FORWARD);
-  delay(50);
+  if (isDefault)
+  {
+    align(FORWARD);
+    delay(50);
+  }
   while(isDefault && (readUS(US_FR) > 15 || readUS(US_FL) > 15))
   {
     drive(40, FORWARD);
