@@ -172,13 +172,6 @@ void setup()
 
 void loop()
 {
-  faceCycle(FORWARD);
-  gyroUSDrive(40);
-  stopProgram();
-}
-
-void _loop()
-{
   digitalWrite(MIC_LED, HIGH);
   delay(100);
   digitalWrite(MIC_LED, LOW);
@@ -370,96 +363,52 @@ void align(int face)
   faceCycle(prevFace);
 }
 
+// This function goes in an outer loop
+void wallDrive(int speed, int face)
+{
+  double pYaw = 5; // The p for the yaw alignment
+  int yawDiff = 0; // The differance in the sensors
+  int yawFix = 0; // The speed fix for the yaw
+  double pDist = 3; // The p for keeping distance from the wall
+  int distDiff = 0; // The differance between the wanted distance the current
+  int distFix = 0; // The speed fix for the distance
+  int distanceFromWall = 10; // The distance to keep from the wall
+  int rightSensor = O_US_FR; // The right sensor on the face
+  int leftSensor = O_US_FL; // The left sensor of the face
+  int prevFace = currFace;
 
-// void gyroUSDrive(int speed)
-// {
-//   double pYaw = 5, pUS = 2; // The fix of the driving, p_gyro for gyro, p_us for ultrasonic.
-//   double yawFix = 0;
-//   int wallDist = 9; // The distance that the robot keeps from te selected wall.
-//   int usFix = 0;
-//   int currDistUS = US_LR; // The currently used us sensor
-//   int currRYawUS = US_LR;
-//   int currLYawUS = US_LL;
-//   int negativeUS = 1; // This value controles he negetivity of the us values.
-//   bool flagUS_RR = false;
-//   bool flagUS_LL = false;
-//   bool foundWall = false;
-//   int minDist = 20;
-//   int negativeFace = 1;
-//   double _speed = 20.0;
+  faceCycle(face); // change the face of the robot
+
+  if (readUS(rightSensor) < 30 && readUS(leftSensor) < 30) // If one of the sensors doesn't see a wall
+  {
+    yawDiff = readUS(rightSensor) - readUS(leftSensor); // The difference between the left and right sensors
+    distDiff = distanceFromWall - ((readUS(rightSensor) + readUS(leftSensor)) / 2); // The differance between the average of the sensors and the target distance
+  }
+  else
+  {
+    yawDiff = 0; // Ignores the difference
+    distDiff = 0; // Ignores the difference
+  }
   
-
-//   //Find on what wall to follow, drives forward untill finds wall if starts with no walls around him.
-//   while(!foundWall && (readUS(US_FR) > minDist) && (readUS(US_FL) > minDist))
-//   {
-//     _speed += _speed < speed ? 5 : 0;
-//     if (readUS(US_RL) <  30 && readUS(US_RR) <  30)
-//     {
-//       currDistUS = US_RL;
-//       currLYawUS = US_RL;
-//       currRYawUS = US_RR;
-//       negativeUS = 1;
-//       foundWall = true;
-//     }
-//     else if (readUS(US_LR) <  30 && readUS(US_LL) <  30)
-//     {
-//       currDistUS = US_LR;
-//       currLYawUS = US_LL;
-//       currRYawUS = US_LR;
-//       negativeUS = -1;
-//       foundWall = true;
-//     }
-//     else
-//     {
-//       drive(_speed, FORWARD);
-//     }
-//   }
-
-//   if(currFace == FORWARD || currFace == RIGHT || currFace == LEFT)
-//   {
-//     negativeFace = negativeFace * 1;
-//   }
-//   else
-//   {
-//     negativeFace = negativeFace * -1;
-//   }
+   // If the robot is not straight it ignores the distance speed fix, doesn't fix the distance
+  if (abs(yawDiff) > 1)
+  {
+    distFix = 0; // Ignores the distance fix
+  }
+  else
+  {
+    distFix = distDiff * pDist; // Sets teh fix to the differance times p
+  }
   
-//   while (!checkHole(US_LL, flagUS_LL) && !checkHole(US_RR, flagUS_RR) && (readUS(US_FR) > minDist) && (readUS(US_FL) > minDist))
-//   {
-//     _speed += _speed < speed ? 5 : 0;
-    
-//     if(readUS(US_RR) < 30 && !flagUS_RR)
-//     {
-//       flagUS_RR = true;
-//     }
-//     if(readUS(US_LL) < 30 && !flagUS_LL)
-//     {
-//       flagUS_LL = true;
-//     }
+  yawFix = yawDiff * pYaw; // The fix is the differance times p
+  motorControl(M_FR, SPEED_LIMIT(20, speed + distFix + yawFix, 80), BACKWARD);
+  motorControl(M_FL, SPEED_LIMIT(20, speed - distFix - yawFix, 80), FORWARD);
+  motorControl(M_BR, SPEED_LIMIT(20, speed - distFix + yawFix, 80), BACKWARD);
+  motorControl(M_BL, SPEED_LIMIT(20, speed + distFix - yawFix, 80), FORWARD);
 
-//     if(readUS(currDistUS) > 30)
-//     {
-//       drive(_speed, FORWARD);
-//     }
-//     else
-//     {
-//       yawFix = (((readUS(currRYawUS) - readUS(currLYawUS)) * pYaw > SPEED_LIMIT(_speed) ? SPEED_LIMIT(_speed) : (readUS(currRYawUS) - readUS(currLYawUS)) * pYaw));
-//       usFix = negativeUS * (((readUS(currDistUS) - wallDist) * pUS) > SPEED_LIMIT(_speed) ? SPEED_LIMIT(_speed) : ((readUS(currDistUS) - wallDist) * pUS));
-  
-//       motorControl(M_FR, SPEED_LIMIT(_speed - usFix), BACKWARD);
-//       motorControl(M_FL, SPEED_LIMIT(readUS(currRYawUS) > 30 || readUS(currLYawUS) > 30 ? _speed : _speed - yawFix), FORWARD); // affected by gyro fix
-//       motorControl(M_BR, SPEED_LIMIT(readUS(currRYawUS) > 30 || readUS(currLYawUS) > 30 ? _speed : _speed + yawFix), BACKWARD); // affected by gyro fix
-//       motorControl(M_BL, SPEED_LIMIT(_speed - usFix), FORWARD);
-//     }
+  faceCycle(prevFace); // Return to the previous face
 
-//     if(checkHole(US_RL, flagUS_RR) || checkHole(US_LR, flagUS_LL))
-//     {
-//       drive(_speed, FORWARD);
-//     }
-//   }
-//   stopRobot();
-//   delay(400);
-//}
+}
 
 void gyroUSDrive(int speed)
 {
@@ -470,46 +419,74 @@ void gyroUSDrive(int speed)
   int distDiff = 0; // The differance between the wanted distance the current
   int distFix = 0; // The speed fix for the distance
   int distanceFromWall = 15; // The distance to keep from the wall
-  int rightSensor = US_RR;
-  int leftSensor = US_RL;
-  int tempSensor = 0;
-  bool isLeft = false;
+  int rightSensor = US_RR; // The right sensor on the face
+  int leftSensor = US_RL; // The left sensor of the face
+  bool isRightSeenWall = false; // If the right sensor saw a wall
+  bool isLeftSeenWall = false; // If the left sensor saw a wall
 
-  if (isLeft)
+  drive(speed, FORWARD);
+  while (readUS(US_RR) > 30 && readUS(US_LL) > 30); // Drive until a wall is found
+
+  if (readUS(US_RR) > 30) // If it stopped on the left wall
   {
-    // Reversing the p
-    pDist *= -1;
+    pDist *= -1; // Reversing the p
+    rightSensor = US_LR; // Setting the left sensor
+    leftSensor = US_LL; // Setting the right sensor
   }
   
-  while (true)
+  
+  // Drives until a sensor sees a hole
+  while (!checkHole(US_RR, isRightSeenWall) && !checkHole(US_LL, isLeftSeenWall))
   {
-    yawDiff = readUS(rightSensor) - readUS(leftSensor);
-    distDiff = distanceFromWall - ((readUS(rightSensor) + readUS(leftSensor)) / 2);
+    if (readUS(rightSensor) < 30 && readUS(leftSensor) < 30) // If one of the sensors doesn't see a wall
+    {
+      yawDiff = readUS(rightSensor) - readUS(leftSensor); // The difference between the left and right sensors
+      distDiff = distanceFromWall - ((readUS(rightSensor) + readUS(leftSensor)) / 2); // The differance between the average of the sensors and the target distance
+    }
+    else
+    {
+      yawDiff = 0; // Ignores the difference
+      distDiff = 0; // Ignores the difference
+    }
+    
 
     // If the robot is not straight it ignores the distance speed fix, doesn't fix the distance
     if (abs(yawDiff) > 1)
     {
-      distFix = 0;
+      distFix = 0; // Ignores the distance fix
     }
     else
     {
-      distFix = distDiff * pDist;
+      distFix = distDiff * pDist; // Sets teh fix to the differance times p
     }
     
-    yawFix = yawDiff * pYaw;
+    yawFix = yawDiff * pYaw; // The fix is the differance times p
 
     motorControl(M_FR, SPEED_LIMIT(20, speed + distFix + yawFix, 80), BACKWARD);
-    motorControl(M_FL, SPEED_LIMIT(20, speed - distFix - yawFix, 80), FORWARD); // affected by gyro fix
-    motorControl(M_BR, SPEED_LIMIT(20, speed - distFix + yawFix, 80), BACKWARD); // affected by gyro fix
+    motorControl(M_FL, SPEED_LIMIT(20, speed - distFix - yawFix, 80), FORWARD);
+    motorControl(M_BR, SPEED_LIMIT(20, speed - distFix + yawFix, 80), BACKWARD);
     motorControl(M_BL, SPEED_LIMIT(20, speed + distFix - yawFix, 80), FORWARD);
+
+    // If the sensor hasn't seen a wall and it sees a wall
+    if (!isRightSeenWall && readUS(US_RR) < 30)
+    {
+      isRightSeenWall = true;
+    }
+
+    // If the sensor hasn't seen a wall and it sees a wall
+    if (!isLeftSeenWall && readUS(US_LL) < 30)
+    {
+      isLeftSeenWall = true;
+    }
   }
+  stopRobot();
 }
 
-// bool checkHole(int us, bool flag)
-// {
-//   int holeDist = 30;
-//   return readUS(us) >= holeDist && flag;
-// }
+bool checkHole(int us, bool flag)
+{
+  int holeDist = 30; // The max distance to see a wall 
+  return readUS(us) >= holeDist && flag; // If the sensor already saw a wall and now sees a hole
+}
 
 
 void faceCycle(int face)
@@ -530,7 +507,6 @@ void faceCycle(int face)
       US_LL = O_US_LL;
       US_LR = O_US_LR;
       US_BR = O_US_BR;
-      //facingDeg = 0;
       swapDir = 1;
       break;
     case LEFT:
@@ -546,7 +522,6 @@ void faceCycle(int face)
       US_BR = O_US_RR;
       US_LL = O_US_BL;
       US_LR = O_US_BR;
-      //facingDeg = 90;
       swapDir = 1;
       break;
     case BACKWARD:
@@ -562,8 +537,6 @@ void faceCycle(int face)
       US_BR = O_US_FR;
       US_LL = O_US_RL;
       US_LR = O_US_RR;
-      //facingDeg = 180;
-      //swapDir = -1;
       break;
     case RIGHT:
       M_BL = O_M_FL;
@@ -578,8 +551,6 @@ void faceCycle(int face)
       US_BR = O_US_LR;
       US_LL = O_US_FL;
       US_LR = O_US_FR;
-      //facingDeg = -90;
-      //swapDir = -1;
       break;
   }
 }
@@ -597,12 +568,10 @@ int pathfind(int x1, int y1, int x2, int y2)
 
   if (_map[y2][x2] == '1')
   {
-    //printf("(x2,y2) is a wall.\n");
     return 0;
   }
   if (_map[y1][x1] == '1')
   {
-    //printf("(x1,y1) is a wall.\n");
     return 0;
   }
 
@@ -615,7 +584,6 @@ int pathfind(int x1, int y1, int x2, int y2)
   {
     if (_map[y][x] == '+')
     {
-      //printf("Stuck, Could not find a suitable path!\n");
       counter = 0;
       x = x1;
       y = y1;
@@ -644,7 +612,6 @@ int pathfind(int x1, int y1, int x2, int y2)
     }
     if (count > 2)
     {
-      //printf("*");
       path[counter++] = '*';
     }
 
@@ -723,7 +690,6 @@ int pathfind(int x1, int y1, int x2, int y2)
       case 'U':
         if (_map[y + 1][x] == '0')
         {
-          //putchar(check[i]);
           path[counter++] = check[i];
           y++;
           flag = 0;
@@ -732,7 +698,6 @@ int pathfind(int x1, int y1, int x2, int y2)
       case 'R':
         if (_map[y][x - 1] == '0')
         {
-          //putchar(check[i]);
           path[counter++] = check[i];
           x--;
           flag = 0;
@@ -741,7 +706,6 @@ int pathfind(int x1, int y1, int x2, int y2)
       case 'D':
         if (_map[y - 1][x] == '0')
         {
-          //putchar(check[i]);
           path[counter++] = check[i];
           y--;
           flag = 0;
@@ -750,21 +714,16 @@ int pathfind(int x1, int y1, int x2, int y2)
       case 'L':
         if (_map[y][x + 1] == '0')
         {
-          //putchar(check[i]);
           path[counter++] = check[i];
           x++;
           flag = 0;
         }
         break;
       default:
-        //printf("Stuck, Could not find a suitable path!");
         break;
       }
     }
-    //getchar();
-    //printMap();
   }
-  //printf("\n");
   _map[y][x] = 'O';
   _map[y1][x1] = 'X';
   return 1;
@@ -873,6 +832,7 @@ void translateDrive(int speed)
         break;
     }
     gyroUSDrive(speed);
+    delay(400);
   }
   stopRobot();
   delay(200);
@@ -1092,22 +1052,15 @@ void scanRoom3()
 {
   bool candle_detected = false;
   faceCycle(FORWARD);
-  while (readUS(US_FR) > 15 && readUS(US_FL) > 15) //If both don't see a wall
-  {
-    drive(50, FORWARD);
-  }
-  delay(100);
-  stopRobot();
-  align(FORWARD);
-  if ((readUS(US_FR) > 15 && readUS(US_FL) < 15) || (readUS(US_FR) < 15 && readUS(US_FL) > 15)) //Only if one of them sees a wall in front
-  {
-    align(FORWARD);
-  }
+  // if ((readUS(US_FR) > 15 && readUS(US_FL) < 15) || (readUS(US_FR) < 15 && readUS(US_FL) > 15)) //Only if one of them sees a wall in front
+  // {
+  //   align(FORWARD);
+  // }
   delay(100);
   checkRoom4();
   while (readUS(US_BL) > 80 || readUS(US_BR) > 80 || (readUS(US_RL) + readUS(US_RR)) / 2.0 > 50) // If one of the back sensors don't see a wall and if the avg of the right sensors doesn't get too close
   {
-    drive(50, RIGHT);
+    wallDrive(50, RIGHT);
   }
   stopRobot();
   gyroTurn(100, 50);
@@ -1122,13 +1075,13 @@ void scanRoom3()
   delay(50);
   align(FORWARD);
   delay(50);
-  while(readUS(US_FR) > 15 || readUS(US_FL) > 15) // If one of the front sensors is not close to a wall
-  {
-    drive(40, FORWARD);
-  }
+  // while(readUS(US_FR) > 15 || readUS(US_FL) > 15) // If one of the front sensors is not close to a wall
+  // {
+  //   drive(40, FORWARD);
+  // }
   while(readUS(US_BL) < 80 && ((readUS(US_LL) + readUS(US_LR)) / 2 > 12)) // If the back left sensor doesn't see a hole and the avg of the left sensors is not a wall
   {
-    drive(50, LEFT);
+    wallDrive(50, LEFT);
   }
   stopRobot();
   delay(50);
@@ -1343,21 +1296,6 @@ void initUS(int US)
 {
   pinMode(US, INPUT);
   pinMode(US + 1, OUTPUT);
-}
-
-void testUS()
-{
-  double currVal = 0;
-  for (int i = 34; i <= 46; i += 2)
-  {
-    currVal = readUS(i);
-    Serial.print("US connected in ");
-    Serial.print(i);
-    Serial.print("  ");
-    Serial.print(currVal);
-    Serial.print("\n");
-    delay(3000);
-  }
 }
 
 void pyroSetup()
