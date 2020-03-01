@@ -172,6 +172,15 @@ void setup()
 
 void loop()
 {
+  while (true)
+  {
+    wallDrive(40, RIGHT);
+  }
+}
+
+
+void _loop()
+{
   digitalWrite(MIC_LED, HIGH);
   delay(100);
   digitalWrite(MIC_LED, LOW);
@@ -313,9 +322,15 @@ void turn(int speed, int dir)
 
 void gyroTurn(int angle, int speed)
 {
+  int negeteMultiplier = angle < 0 ? -1 : 1;
   yaw = 0; //Resets the yaw of the robot.
   // angle - (speed / 2); //A fix for the degrees based on the offset caused by the speed.
-  int newAngle = angle > 0 ? angle / 2 + 23: angle / 2 - 23;
+  if (abs(angle) == 180)
+  {
+    angle = 115;
+  }
+  int newAngle = abs(angle) + 14;//angle > 0 ? angle / 2 + 23: angle / 2 - 23;
+  newAngle = 0.03*pow(newAngle - 70, 2) * negeteMultiplier;
   if (newAngle > 0)
   {
     turn(speed, RIGHT);
@@ -366,7 +381,7 @@ void align(int face)
 // This function goes in an outer loop
 void wallDrive(int speed, int face)
 {
-  double pYaw = 5; // The p for the yaw alignment
+  double pYaw = 6; // The p for the yaw alignment
   int yawDiff = 0; // The differance in the sensors
   int yawFix = 0; // The speed fix for the yaw
   double pDist = 3; // The p for keeping distance from the wall
@@ -377,11 +392,16 @@ void wallDrive(int speed, int face)
   int leftSensor = O_US_FL; // The left sensor of the face
   int prevFace = currFace;
 
-  faceCycle(face); // change the face of the robot
+  faceCycle(face); // change the driving direction of the robot to face.
+
+  if (face == RIGHT)
+  {
+    pDist *= -1;
+  }
 
   if (readUS(rightSensor) < 30 && readUS(leftSensor) < 30) // If one of the sensors doesn't see a wall
   {
-    yawDiff = readUS(rightSensor) - readUS(leftSensor); // The difference between the left and right sensors
+    yawDiff = readUS(rightSensor) - (readUS(leftSensor) + 1); // The difference between the left and right sensors
     distDiff = distanceFromWall - ((readUS(rightSensor) + readUS(leftSensor)) / 2); // The differance between the average of the sensors and the target distance
   }
   else
@@ -391,13 +411,13 @@ void wallDrive(int speed, int face)
   }
   
    // If the robot is not straight it ignores the distance speed fix, doesn't fix the distance
-  if (abs(yawDiff) > 1)
+  if (abs(yawDiff) > 0.3)
   {
     distFix = 0; // Ignores the distance fix
   }
   else
   {
-    distFix = distDiff * pDist; // Sets teh fix to the differance times p
+    distFix = distDiff * pDist; // Sets the fix to the differance times p
   }
   
   yawFix = yawDiff * pYaw; // The fix is the differance times p
@@ -407,7 +427,6 @@ void wallDrive(int speed, int face)
   motorControl(M_BL, SPEED_LIMIT(20, speed + distFix - yawFix, 80), FORWARD);
 
   faceCycle(prevFace); // Return to the previous face
-
 }
 
 void gyroUSDrive(int speed)
@@ -969,7 +988,7 @@ void scanRoom1(bool reversed)
       stopRobot();
       delay(50);
     }
-    gyroTurn(190, 50);
+    gyroTurn(180, 50);
     delay(50);
     align(FORWARD);
     delay(100);
@@ -1011,8 +1030,7 @@ void scanRoom2()
   faceCycle(FORWARD);
   align(FORWARD);
   delay(100);
-  gyroTurn(-70, 50);
-  gyroTurn(-70, 50);
+  gyroTurn(180, 50);
   delay(300);
   if(readUV())
   {
@@ -1041,8 +1059,7 @@ void scanRoom2()
     mapDrive(50, ROOM_2_1, HOME_1);
     stopProgram();
   }
-  gyroTurn(80, 50);
-  gyroTurn(80, 50);
+  gyroTurn(180, 50);
   delay(100);
   align(FORWARD);
   delay(100);
@@ -1052,18 +1069,15 @@ void scanRoom3()
 {
   bool candle_detected = false;
   faceCycle(FORWARD);
-  // if ((readUS(US_FR) > 15 && readUS(US_FL) < 15) || (readUS(US_FR) < 15 && readUS(US_FL) > 15)) //Only if one of them sees a wall in front
-  // {
-  //   align(FORWARD);
-  // }
   delay(100);
   checkRoom4();
   while (readUS(US_BL) > 80 || readUS(US_BR) > 80 || (readUS(US_RL) + readUS(US_RR)) / 2.0 > 50) // If one of the back sensors don't see a wall and if the avg of the right sensors doesn't get too close
   {
-    wallDrive(50, RIGHT);
+    wallDrive(30, RIGHT);
   }
   stopRobot();
-  gyroTurn(100, 50);
+  align(FORWARD);
+  gyroTurn(90, 50);
   delay(200);
   if (readUV())
   {
@@ -1071,17 +1085,13 @@ void scanRoom3()
     pyroDetect();
     delay(100);
   }
-  gyroTurn(-105, 50);
+  gyroTurn(-90, 50);
   delay(50);
   align(FORWARD);
   delay(50);
-  // while(readUS(US_FR) > 15 || readUS(US_FL) > 15) // If one of the front sensors is not close to a wall
-  // {
-  //   drive(40, FORWARD);
-  // }
   while(readUS(US_BL) < 80 && ((readUS(US_LL) + readUS(US_LR)) / 2 > 12)) // If the back left sensor doesn't see a hole and the avg of the left sensors is not a wall
   {
-    wallDrive(50, LEFT);
+    wallDrive(30, LEFT);
   }
   stopRobot();
   delay(50);
@@ -1120,17 +1130,11 @@ void scanRoom4()
     align(FORWARD);
     delay(50);
   }
-  while(isDefault && (readUS(US_FR) > 15 || readUS(US_FL) > 15))
-  {
-    drive(40, FORWARD);
-  }
-  stopRobot();
-  delay(50);
 
   // Goes left into the room
   while(readUS(US_BL) > 80 || readUS(US_BR) > 80 || (!isDefault ? readUS(US_RR) < 30 || readUS(US_RL) < 30 : 0) || (isDefault ? readUS(US_LR) > 100 && readUS(US_LL) > 100 : 0))
   {
-    drive(50, LEFT);
+    wallDrive(30, LEFT);
   }
   delay(150);
   stopRobot();
@@ -1167,30 +1171,10 @@ void scanRoom4()
   }
   else
   {
-    // Goes away from the front wall
-    align(FORWARD);
-    delay(100);
-    while(readUS(US_FL) < 10 || readUS(US_FR) < 10)
-    {
-      drive(30, BACKWARD);
-    }
-    stopRobot();
-    delay(50);
-    align(FORWARD);
-    delay(50);
-
-    // Goes to the wall if it is too far
-    while(readUS(US_FR) > 15 || readUS(US_FL) > 15) // If one of the front sensors is not close to a wall
-    {
-      drive(40, FORWARD);
-    }
-    stopRobot();
-    delay(100);
-
     // Goes out of the room
     while((readUS(US_BL) < 80 || readUS(US_BR) < 80) && readUS(US_RL) < 100)
     {
-      drive(50, RIGHT);
+      wallDrive(30, RIGHT);
     }
     stopRobot();
     delay(100);
@@ -1214,7 +1198,7 @@ void startAlign()
 {
   if((readUS(US_RL) + readUS(US_RR)) / 2.0 > 40)
   {
-    gyroTurn(80, 50);
+    gyroTurn(90, 50);
     delay(10);
     align(RIGHT);
     delay(100);
