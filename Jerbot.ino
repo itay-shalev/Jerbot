@@ -170,16 +170,8 @@ void setup()
   pyroSetup();
 }
 
+
 void loop()
-{
-  while (true)
-  {
-    wallDrive(40, RIGHT);
-  }
-}
-
-
-void _loop()
 {
   digitalWrite(MIC_LED, HIGH);
   delay(100);
@@ -1067,6 +1059,28 @@ void scanRoom2()
 
 void scanRoom3()
 {
+  align(FORWARD);
+  while ((readUS(US_RR) + readUS(US_RL) / 2) > 70)
+  {
+    wallDrive(50, RIGHT);
+  }
+  gyroTurn(180, 50);
+  delay(100);
+  while ((readUS(US_RR) + readUS(US_RL) / 2) > 40)
+  {
+    wallDrive(50, LEFT);
+  }
+  stopRobot();
+  stopProgram();
+}
+
+void scanRoom4()
+{
+  stopProgram();
+}
+
+void _scanRoom3()
+{
   bool candle_detected = false;
   faceCycle(FORWARD);
   delay(100);
@@ -1110,7 +1124,7 @@ void scanRoom3()
 }
 
 
-void scanRoom4()
+void _scanRoom4()
 {
   bool isDefault = !(originalMap[8][6] == '0');
   bool candle_detected = false;
