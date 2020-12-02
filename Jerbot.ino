@@ -39,6 +39,7 @@
 #define ROOM_2_1 1, 6
 #define ROOM_3_1 5, 11
 #define ROOM_4_1 5, originalMap[8][6] == '1' ? 11 : 8
+#define CENTER_1 5, 6
 #define HOME_2 5, 13
 #define ROOM_1_2 8, 13
 #define ROOM_2_2 1, 18
@@ -195,11 +196,11 @@ void loop()
   }
   scanRoom2();
   align(FORWARD);
-  mapDrive(50, ROOM_2_1, ROOM_3_1);
-  scanRoom3();
+  mapDrive(50, CENTER_1, ROOM_3_1);
+  _scanRoom3();
   align(FORWARD);
   mapDrive(50, ROOM_3_1, ROOM_4_1);
-  scanRoom4();
+  _scanRoom4();
   if(isDog || !isRoom1_1Default)
   {
     checkRoom1(true);
@@ -214,49 +215,63 @@ void loop()
 }
 
 
+/* This function drives a specific motor by speed and direction
+Input:
+  motor - The motor connection pinMode
+  speed - The speed to drive the motor (0 - 100)
+  dir - Backward or forward
+Output:
+  None */
 void motorControl(int motor, int speed, int dir)
 {
   if (dir)
   {
-    analogWrite(motor, (int)(map(speed, 0, 100, 0, 255)));
-    digitalWrite(motor + 1, LOW);
+    // If forward
+    analogWrite(motor, (int)(map(speed, 0, 100, 0, 255))); // Convert the speed range to 0 - 255 from 0 - 100 and send it to the forward pin
+    digitalWrite(motor + 1, LOW); // Set the backward pin to low
   }
   else
   {
-    analogWrite(motor + 1, (int)(map(speed, 0, 100, 0, 255)));
-    digitalWrite(motor, LOW);
+    analogWrite(motor + 1, (int)(map(speed, 0, 100, 0, 255))); // Convert the speed range to 0 - 255 from 0 - 100 and send it to the backward pin
+    digitalWrite(motor, LOW); // Set the backward pin to low
   }
 }
 
 
+/* This function drives the robot in any of the four directions
+Input:
+  speed - The driving speed (0 - 100)
+  dir - The direction
+Output:
+  None */
 void drive(int speed, int dir)
 {
-  int _speed = speed;
+  // Set each motor direction according to the driving direction (See holonomic drive)
   switch(dir)
   {
     case BACKWARD:
-      motorControl(M_FL, _speed, BACKWARD);
-      motorControl(M_FR, _speed, FORWARD);
-      motorControl(M_BL, _speed, BACKWARD);
-      motorControl(M_BR, _speed, FORWARD);
+      motorControl(M_FL, speed, BACKWARD);
+      motorControl(M_FR, speed, FORWARD);
+      motorControl(M_BL, speed, BACKWARD);
+      motorControl(M_BR, speed, FORWARD);
       break;
     case FORWARD:
-      motorControl(M_FL, _speed, FORWARD);
-      motorControl(M_FR, _speed, BACKWARD);
-      motorControl(M_BL, _speed, FORWARD);
-      motorControl(M_BR, _speed, BACKWARD);
+      motorControl(M_FL, speed, FORWARD);
+      motorControl(M_FR, speed, BACKWARD);
+      motorControl(M_BL, speed, FORWARD);
+      motorControl(M_BR, speed, BACKWARD);
       break;
    case LEFT:
-      motorControl(M_FL, _speed, BACKWARD);
-      motorControl(M_FR, _speed, BACKWARD);
-      motorControl(M_BL, _speed, FORWARD);
-      motorControl(M_BR, _speed, FORWARD);
+      motorControl(M_FL, speed, BACKWARD);
+      motorControl(M_FR, speed, BACKWARD);
+      motorControl(M_BL, speed, FORWARD);
+      motorControl(M_BR, speed, FORWARD);
       break;
     case RIGHT:
-      motorControl(M_FL, _speed, FORWARD);
-      motorControl(M_FR, _speed, FORWARD);
-      motorControl(M_BL, _speed, BACKWARD);
-      motorControl(M_BR, _speed, BACKWARD);
+      motorControl(M_FL, speed, FORWARD);
+      motorControl(M_FR, speed, FORWARD);
+      motorControl(M_BL, speed, BACKWARD);
+      motorControl(M_BR, speed, BACKWARD);
       break;
   }
 }
@@ -293,8 +308,16 @@ double getYaw()
 }
 
 
+/* This function turns the robot on its place
+Input:
+  speed - The speed (0 - 100)
+  dir - The turn direction
+Output:
+  None
+*/
 void turn(int speed, int dir)
 {
+  // Turn the wheels to the same direction according to the turn direction
   if (dir == RIGHT)
   {
     motorControl(M_FL, speed, FORWARD);
@@ -312,17 +335,24 @@ void turn(int speed, int dir)
 }
 
 
+/* This function turns the robot by degrees.
+Input:
+  angle - The angle in degrees (-360 - 360)
+  speed - The speed to turn (0 - 100)
+Output:
+  None */
 void gyroTurn(int angle, int speed)
 {
-  int negeteMultiplier = angle < 0 ? -1 : 1;
+  int negateMultiplier = angle < 0 ? -1 : 1;
   yaw = 0; //Resets the yaw of the robot.
-  // angle - (speed / 2); //A fix for the degrees based on the offset caused by the speed.
   if (abs(angle) == 180)
   {
+    // Fix 180 degrees angle offset
     angle = 115;
   }
-  int newAngle = abs(angle) + 14;//angle > 0 ? angle / 2 + 23: angle / 2 - 23;
-  newAngle = 0.03*pow(newAngle - 70, 2) * negeteMultiplier;
+  // Fix the angle offset that was determined by measuring
+  int newAngle = abs(angle) + 14;
+  newAngle = 0.03 * pow(newAngle - 70, 2) * negateMultiplier;
   if (newAngle > 0)
   {
     turn(speed, RIGHT);
@@ -333,6 +363,7 @@ void gyroTurn(int angle, int speed)
   }
   while (abs(abs(newAngle) - abs(yaw)) >= 3)
   {
+    // Turn while dest angle was not reached
     yaw = getYaw();
   }
   stopRobot();
@@ -815,57 +846,69 @@ void blockPath(int x1, int y1)
   }
 }
 
+/* This function drives the robot in the generated path
+Input:
+  speed - The speed (0 - 100)
+Output:
+  None */
 void translateDrive(int speed)
 {
-  int i = 0;
-  for (i = 0; path[i] != 0; i++)
+  for (int i = 0; path[i] != 0; i++)
   {
+    // Goes other each symbol in the path
     switch (path[i])
     {
       case 'U':
         faceCycle(FORWARD);
         break;
-
       case 'L':
         faceCycle(LEFT);
         break;
-
       case 'R':
         faceCycle(RIGHT);
         break;
-
       case 'D':
         faceCycle(BACKWARD);
         break;
-
       default:
         stopRobot();
         break;
     }
+    // Drive until a crossroad
     gyroUSDrive(speed);
-    delay(400);
+    stopRobot();
+    delay(800);
   }
+  // Reset direction to forward
   stopRobot();
   delay(200);
   faceCycle(FORWARD);
 }
 
-
+/* This function drives the robot from point A to point B
+Input:
+  speed - The speed (0 - 100)
+  x1 - The source x
+  y1 - The source y
+  x2 - The destination x
+  y2 - The destination y
+Output:
+  None */
 void mapDrive(int speed, int x1, int y1, int x2, int y2)
 {
-  if(checkIfRoom(x1, y1, ROOM_1_1) && !isRoom1_1Updated && isRoom1_1Checked)
+  if(checkIfRoom(x1, y1, ROOM_1_1) && !isRoom1_1Updated && isRoom1_1Checked) // Update room 1 location
   {
     isRoom1_1Updated = true;
-    pathfind(8, 1, x2, y2);
+    pathfind(8, 1, x2, y2); // generate the path
   }
   else
   {
-    pathfind(x1, y1, x2, y2);
+    pathfind(x1, y1, x2, y2); // Generate the path
   }
-  minimizePath();
-  translateDrive(speed);
-  clearPath();
-  if (checkIfRoom(x2, y2, ROOM_3_1))
+  minimizePath(); // Minimize the path
+  translateDrive(speed); // Drive along the path
+  clearPath(); // Clean the path
+  if (checkIfRoom(x2, y2, ROOM_3_1)) // Check and move near room 3
   {
     if(readUS(US_RR) < 20)
     {
@@ -1055,6 +1098,12 @@ void scanRoom2()
   delay(100);
   align(FORWARD);
   delay(100);
+  while (readUS(O_US_FR) < 15)
+  {
+    wallDrive(50, LEFT);
+  }
+  stopRobot();
+  delay(800);
 }
 
 void scanRoom3()
@@ -1066,6 +1115,8 @@ void scanRoom3()
   }
   gyroTurn(180, 50);
   delay(100);
+  // TODO: Scan for candle
+  gyroTurn(180, 50);
   while ((readUS(US_RR) + readUS(US_RL) / 2) > 40)
   {
     wallDrive(50, LEFT);
@@ -1091,7 +1142,7 @@ void _scanRoom3()
   }
   stopRobot();
   align(FORWARD);
-  gyroTurn(90, 50);
+  gyroTurn(180, 50);
   delay(200);
   if (readUV())
   {
@@ -1099,7 +1150,7 @@ void _scanRoom3()
     pyroDetect();
     delay(100);
   }
-  gyroTurn(-90, 50);
+  gyroTurn(180, 50);
   delay(50);
   align(FORWARD);
   delay(50);
@@ -1155,10 +1206,11 @@ void _scanRoom4()
   delay(50);
 
   // Turns to face the candle
-  gyroTurn(isDefault ? -135 : -45, 50);
+  gyroTurn(isDefault ? -100 : -45, 50);
   delay(200);
 
   // If there is fire it detects it and extinguishes it
+  delay(5000);
   if(readUV())
   {
     candle_detected = true;
@@ -1166,7 +1218,10 @@ void _scanRoom4()
   }
 
   // Turn back to the hallway
-  gyroTurn(isDefault ? 135 : 45, 50);
+  gyroTurn(isDefault ? 100 : 45, 50);
+
+  stopRobot();
+  stopProgram();
 
 
   if(!isDefault)
