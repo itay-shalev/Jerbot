@@ -452,7 +452,7 @@ void wallDrive(int speed, int face)
   faceCycle(prevFace); // Return to the previous face
 }
 
-void gyroUSDrive(int speed)
+void alignedDrive(int speed)
 {
   double pYaw = 5; // The p for the yaw alignment
   int yawDiff = 0; // The differance in the sensors
@@ -499,7 +499,7 @@ void gyroUSDrive(int speed)
     }
     else
     {
-      distFix = distDiff * pDist; // Sets teh fix to the differance times p
+      distFix = distDiff * pDist; // Sets the fix to the difference times p
     }
     
     yawFix = yawDiff * pYaw; // The fix is the differance times p
@@ -875,7 +875,7 @@ void translateDrive(int speed)
         break;
     }
     // Drive until a crossroad
-    gyroUSDrive(speed);
+    alignedDrive(speed);
     stopRobot();
     delay(800);
   }
@@ -913,7 +913,7 @@ void mapDrive(int speed, int x1, int y1, int x2, int y2)
     if(readUS(US_RR) < 20)
     {
       faceCycle(FORWARD);
-      gyroUSDrive(50);
+      alignedDrive(50);
       delay(100);
     }
     align(FORWARD);
@@ -1028,7 +1028,7 @@ void scanRoom1(bool reversed)
     align(FORWARD);
     delay(100);
     faceCycle(RIGHT);
-    gyroUSDrive(50);
+    alignedDrive(50);
     faceCycle(FORWARD);
   }
   else
@@ -1166,7 +1166,7 @@ void _scanRoom3()
     if(readUS(US_LL) < 30 || readUS(US_LR) < 30)
     {
       faceCycle(BACKWARD);
-      gyroUSDrive(50);
+      alignedDrive(50);
       faceCycle(FORWARD);
     }
     mapDrive(50, ROOM_3_1, HOME_1);
@@ -1233,7 +1233,7 @@ void _scanRoom4()
     faceCycle(RIGHT);
     while(readUS(US_FR) > 20 && readUS(US_FL) > 20)
     {
-      gyroUSDrive(50);
+      alignedDrive(50);
     }
     faceCycle(FORWARD);
     align(RIGHT);
@@ -1259,7 +1259,7 @@ void _scanRoom4()
   }
   // Goes back out of the room to the junction
   faceCycle(BACKWARD);
-  gyroUSDrive(50);
+  alignedDrive(50);
 }
 
 
